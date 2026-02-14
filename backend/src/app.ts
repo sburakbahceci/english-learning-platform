@@ -3,7 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import dotenv from 'dotenv';
-import levelsRoutes from './modules/levels/levels.routes'; // ← YENİ
+import authRoutes from './modules/auth/auth.routes';
+import levelsRoutes from './modules/levels/levels.routes';
+import usersRoutes from './modules/users/users.routes';
 
 dotenv.config();
 
@@ -44,15 +46,18 @@ app.get('/api/v1', (_req: Request, res: Response) => {
     version: '1.0.0',
     endpoints: {
       health: '/health',
+      auth: '/api/v1/auth/google',
+      verify: '/api/v1/auth/verify',
+      users: '/api/v1/users/me',
       levels: '/api/v1/levels',
-      auth: '/api/v1/auth (coming soon)',
-      users: '/api/v1/users (coming soon)',
     },
   });
 });
 
-// Routes - YENİ
-app.use('/api/v1/levels', levelsRoutes); // ← YENİ
+// API Routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/levels', levelsRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
