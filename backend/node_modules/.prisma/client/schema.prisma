@@ -1,0 +1,292 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  googleId          String             @unique @map("google_id") @db.VarChar(255)
+  email             String             @unique @db.VarChar(255)
+  name              String             @db.VarChar(255)
+  avatarUrl         String?            @map("avatar_url")
+  totalXp           Int?               @default(0) @map("total_xp")
+  currentStreak     Int?               @default(0) @map("current_streak")
+  longestStreak     Int?               @default(0) @map("longest_streak")
+  lastActivityDate  DateTime?          @map("last_activity_date") @db.Date
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  isActive          Boolean?           @default(true) @map("is_active")
+  auditLogs         AuditLog[]
+  examAttempts      ExamAttempt[]
+  exams             Exam[]
+  lessonCompletions LessonCompletion[]
+  levelResets       LevelReset[]
+  sessions          Session[]
+  achievements      UserAchievement[]
+  progress          UserProgress[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([googleId], map: "idx_users_google_id")
+  @@map("users")
+}
+
+model Level {
+  id           String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  code         String         @unique @db.VarChar(10)
+  name         String         @db.VarChar(100)
+  description  String?
+  orderIndex   Int            @unique @map("order_index")
+  requiredXp   Int?           @default(0) @map("required_xp")
+  badgeIconUrl String?        @map("badge_icon_url")
+  createdAt    DateTime?      @default(now()) @map("created_at") @db.Timestamp(6)
+  examAttempts ExamAttempt[]
+  exams        Exam[]
+  lessons      Lesson[]
+  resets       LevelReset[]
+  questions    Question[]
+  progress     UserProgress[]
+
+  @@map("levels")
+}
+
+model Lesson {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  levelId          String?            @map("level_id") @db.Uuid
+  title            String             @db.VarChar(255)
+  description      String?
+  type             LessonType
+  orderIndex       Int                @map("order_index")
+  content          Json
+  xpReward         Int?               @default(10) @map("xp_reward")
+  estimatedMinutes Int?               @default(5) @map("estimated_minutes")
+  createdAt        DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  completions      LessonCompletion[]
+  level            Level?             @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  currentProgress  UserProgress[]     @relation("CurrentLesson")
+
+  @@unique([levelId, orderIndex])
+  @@index([levelId], map: "idx_lessons_level")
+  @@map("lessons")
+}
+
+model UserProgress {
+  id               String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId           String?         @map("user_id") @db.Uuid
+  levelId          String?         @map("level_id") @db.Uuid
+  status           ProgressStatus? @default(locked)
+  lessonsCompleted Int?            @default(0) @map("lessons_completed")
+  totalLessons     Int?            @default(0) @map("total_lessons")
+  currentLessonId  String?         @map("current_lesson_id") @db.Uuid
+  isExamUnlocked   Boolean?        @default(false) @map("is_exam_unlocked")
+  examPassed       Boolean?        @default(false) @map("exam_passed")
+  bestExamScore    Decimal?        @default(0.0) @map("best_exam_score") @db.Decimal(5, 2)
+  createdAt        DateTime?       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime?       @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  currentLesson    Lesson?         @relation("CurrentLesson", fields: [currentLessonId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  level            Level?          @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user             User?           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, levelId])
+  @@index([status], map: "idx_user_progress_status")
+  @@index([userId], map: "idx_user_progress_user")
+  @@map("user_progress")
+}
+
+model LessonCompletion {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId           String?   @map("user_id") @db.Uuid
+  lessonId         String?   @map("lesson_id") @db.Uuid
+  score            Decimal?  @db.Decimal(5, 2)
+  xpEarned         Int?      @map("xp_earned")
+  timeSpentSeconds Int?      @map("time_spent_seconds")
+  completedAt      DateTime? @default(now()) @map("completed_at") @db.Timestamp(6)
+  lesson           Lesson?   @relation(fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user             User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, lessonId])
+  @@index([userId], map: "idx_lesson_completions_user")
+  @@map("lesson_completions")
+}
+
+model Question {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  levelId          String?          @map("level_id") @db.Uuid
+  category         QuestionCategory
+  type             QuestionType
+  questionText     String           @map("question_text")
+  options          Json?
+  correctAnswer    String           @map("correct_answer")
+  explanation      String?
+  difficultyWeight Decimal?         @default(1.0) @map("difficulty_weight") @db.Decimal(3, 2)
+  tags             String[]
+  createdAt        DateTime?        @default(now()) @map("created_at") @db.Timestamp(6)
+  isActive         Boolean?         @default(true) @map("is_active")
+  level            Level?           @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([isActive], map: "idx_questions_active")
+  @@index([category], map: "idx_questions_category")
+  @@index([levelId], map: "idx_questions_level")
+  @@map("questions")
+}
+
+model Exam {
+  id               String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId           String?       @map("user_id") @db.Uuid
+  levelId          String?       @map("level_id") @db.Uuid
+  status           ExamStatus?   @default(in_progress)
+  questions        Json
+  answers          Json?
+  score            Decimal?      @db.Decimal(5, 2)
+  passed           Boolean?
+  startedAt        DateTime?     @default(now()) @map("started_at") @db.Timestamp(6)
+  completedAt      DateTime?     @map("completed_at") @db.Timestamp(6)
+  expiresAt        DateTime?     @map("expires_at") @db.Timestamp(6)
+  timeTakenSeconds Int?          @map("time_taken_seconds")
+  examAttempts     ExamAttempt[]
+  level            Level?        @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user             User?         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([levelId], map: "idx_exams_level")
+  @@index([status], map: "idx_exams_status")
+  @@index([userId], map: "idx_exams_user")
+  @@map("exams")
+}
+
+model ExamAttempt {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId        String?   @map("user_id") @db.Uuid
+  levelId       String?   @map("level_id") @db.Uuid
+  examId        String?   @map("exam_id") @db.Uuid
+  attemptNumber Int       @map("attempt_number")
+  score         Decimal   @db.Decimal(5, 2)
+  passed        Boolean
+  attemptedAt   DateTime? @default(now()) @map("attempted_at") @db.Timestamp(6)
+  exam          Exam?     @relation(fields: [examId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  level         Level?    @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId, levelId], map: "idx_exam_attempts_user_level")
+  @@map("exam_attempts")
+}
+
+model LevelReset {
+  id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId              String?   @map("user_id") @db.Uuid
+  levelId             String?   @map("level_id") @db.Uuid
+  reason              String
+  failedAttemptsCount Int?      @map("failed_attempts_count")
+  resetAt             DateTime? @default(now()) @map("reset_at") @db.Timestamp(6)
+  level               Level?    @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId], map: "idx_level_resets_user")
+  @@map("level_resets")
+}
+
+model Achievement {
+  id               String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  code             String            @unique @db.VarChar(50)
+  name             String            @db.VarChar(255)
+  description      String?
+  iconUrl          String?           @map("icon_url")
+  xpReward         Int?              @default(0) @map("xp_reward")
+  criteria         Json
+  createdAt        DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId        String?      @map("user_id") @db.Uuid
+  achievementId String?      @map("achievement_id") @db.Uuid
+  unlockedAt    DateTime?    @default(now()) @map("unlocked_at") @db.Timestamp(6)
+  achievement   Achievement? @relation(fields: [achievementId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user          User?        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([userId, achievementId])
+  @@index([userId], map: "idx_user_achievements_user")
+  @@map("user_achievements")
+}
+
+model Session {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       String?   @map("user_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamp(6)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  lastActivity DateTime? @default(now()) @map("last_activity") @db.Timestamp(6)
+  ipAddress    String?   @map("ip_address") @db.Inet
+  userAgent    String?   @map("user_agent")
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([expiresAt], map: "idx_sessions_expires")
+  @@index([tokenHash], map: "idx_sessions_token")
+  @@index([userId], map: "idx_sessions_user")
+  @@map("sessions")
+}
+
+model AuditLog {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId     String?   @map("user_id") @db.Uuid
+  action     String    @db.VarChar(100)
+  entityType String?   @map("entity_type") @db.VarChar(50)
+  entityId   String?   @map("entity_id") @db.Uuid
+  oldValues  Json?     @map("old_values")
+  newValues  Json?     @map("new_values")
+  ipAddress  String?   @map("ip_address") @db.Inet
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  user       User?     @relation(fields: [userId], references: [id], onUpdate: NoAction)
+
+  @@index([action], map: "idx_audit_logs_action")
+  @@index([createdAt], map: "idx_audit_logs_created")
+  @@index([userId], map: "idx_audit_logs_user")
+  @@map("audit_logs")
+}
+
+enum LessonType {
+  grammar
+  vocabulary
+  practice
+
+  @@map("lesson_type")
+}
+
+enum ProgressStatus {
+  locked
+  in_progress
+  completed
+
+  @@map("progress_status")
+}
+
+enum QuestionType {
+  multiple_choice
+  fill_blank
+  true_false
+  matching
+
+  @@map("question_type")
+}
+
+enum QuestionCategory {
+  grammar
+  vocabulary
+
+  @@map("question_category")
+}
+
+enum ExamStatus {
+  in_progress
+  completed
+  expired
+
+  @@map("exam_status")
+}
