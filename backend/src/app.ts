@@ -7,6 +7,7 @@ import authRoutes from './modules/auth/auth.routes';
 import levelsRoutes from './modules/levels/levels.routes';
 import usersRoutes from './modules/users/users.routes';
 import lessonsRoutes from './modules/lessons/lessons.routes';
+import examsRoutes from './modules/exams/exams.routes';
 
 dotenv.config();
 
@@ -39,10 +40,10 @@ app.get('/api/v1', (_req: Request, res: Response) => {
     endpoints: {
       health: '/health',
       auth: '/api/v1/auth/google',
-      verify: '/api/v1/auth/verify',
       users: '/api/v1/users/me',
       levels: '/api/v1/levels',
-      lessons: '/api/v1/lessons', // ← GÜNCELLENDI
+      lessons: '/api/v1/lessons',
+      exams: '/api/v1/exams',
     },
   });
 });
@@ -51,8 +52,10 @@ app.get('/api/v1', (_req: Request, res: Response) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/levels', levelsRoutes);
-app.use('/api/v1/lessons', lessonsRoutes); // ← YENİ
+app.use('/api/v1/lessons', lessonsRoutes);
+app.use('/api/v1/exams', examsRoutes);
 
+// 404 Handler
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
     error: 'Not Found',
@@ -60,6 +63,7 @@ app.use((_req: Request, res: Response) => {
   });
 });
 
+// Error Handler
 app.use((err: Error, _req: Request, res: Response) => {
   console.error('Error:', err);
   res.status(500).json({

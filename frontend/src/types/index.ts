@@ -107,3 +107,54 @@ export interface ApiResponse<T> {
   message?: string;
   count?: number;
 }
+
+// Mevcut tiplerin altına ekle
+
+export interface Question {
+  id: string;
+  questionText: string;
+  type: string;
+  category: string;
+  options: string[];
+  correctAnswer?: string;
+  explanation?: string;
+}
+
+export interface Exam {
+  id: string;
+  userId: string;
+  levelId: string;
+  status: 'in_progress' | 'passed' | 'failed';
+  score: number | null;
+  totalQuestions: number;
+  correctAnswers: number | null;
+  timeLimit: number;
+  completedAt: string | null;
+  createdAt: string;
+}
+
+export interface ExamResult {
+  questionId: string;
+  questionText: string;
+  userAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  explanation: string | null;
+}
+
+export interface ExamSubmitResponse {
+  exam: Exam;
+  score: number;
+  passed: boolean;
+  correctAnswers: number;
+  totalQuestions: number;
+  results: ExamResult[];
+}
+
+export interface ExamAttempt {
+  id: string;
+  score: number;
+  passed: boolean;
+  attemptNumber: number;
+  attemptedAt: string;
+}

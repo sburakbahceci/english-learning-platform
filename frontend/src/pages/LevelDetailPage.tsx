@@ -20,24 +20,20 @@ export default function LevelDetailPage() {
       try {
         if (!code) return;
 
-        // Get level details
         const { data: levelData } = await levelsService.getLevelByCode(code);
         setLevel(levelData);
 
-        // Get lessons
         const { data: lessonsData } = await lessonsService.getLessonsByLevel(
           levelData.id
         );
         setLessons(lessonsData);
 
-        // Get completions (if authenticated)
         if (user) {
           try {
             const { data: completionsData } =
               await lessonsService.getUserCompletions(levelData.id);
             setCompletions(completionsData);
           } catch {
-            // User might not have started this level yet
             console.log('No completions yet');
           }
         }
@@ -57,16 +53,15 @@ export default function LevelDetailPage() {
 
   const getLessonIcon = (type: string) => {
     switch (type) {
-      case 'grammar':
-        return '📖';
-      case 'vocabulary':
-        return '📚';
-      case 'practice':
-        return '✍️';
-      default:
-        return '📝';
+      case 'grammar': return '📖';
+      case 'vocabulary': return '📚';
+      case 'practice': return '✍️';
+      default: return '📝';
     }
   };
+
+  const allLessonsCompleted =
+    lessons.length > 0 && completions.length >= lessons.length;
 
   if (loading) {
     return (
@@ -134,12 +129,36 @@ export default function LevelDetailPage() {
             <div
               className="bg-blue-600 h-2 rounded-full transition-all"
               style={{
-                width: `${lessons.length > 0 ? (completions.length / lessons.length) * 100 : 0}%`,
+                width: `${lessons.length > 0
+                  ? (completions.length / lessons.length) * 100
+                  : 0}%`,
               }}
             ></div>
           </div>
         </div>
       </div>
+
+      {/* ✅ EXAM BUTTON - Tüm dersler tamamlandıysa göster */}
+      {allLessonsCompleted && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-yellow-800">
+                🎉 All lessons completed!
+              </h3>
+              <p className="text-yellow-700 text-sm mt-1">
+                You can now take the level exam. Score 80% or higher to advance!
+              </p>
+            </div>
+            <button
+              onClick={() => navigate(`/exam/${level.id}`)}
+              className="px-6 py-3 bg-yellow-500 text-white font-bold rounded-xl hover:bg-yellow-600 transition-colors whitespace-nowrap ml-4"
+            >
+              Take Exam 📝
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Lessons List */}
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
