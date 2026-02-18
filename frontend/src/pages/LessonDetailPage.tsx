@@ -169,7 +169,7 @@ export default function LessonDetailPage() {
           <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-white-600 hover:text-white"
             >
               ← Back
             </button>

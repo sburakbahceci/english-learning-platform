@@ -19,7 +19,7 @@ export default function HomePage() {
             <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Lingoria
             </h1>
-            <p className="text-sm text-gray-500 mt-1">Learn English with AI</p>
+            <p className="text-sm text-gray-500 mt-1">Unlock Your Next Level</p>
           </div>
 
           <h2 className="text-2xl font-bold text-gray-800 mb-2">

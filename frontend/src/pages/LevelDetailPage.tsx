@@ -101,7 +101,7 @@ export default function LevelDetailPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-white-900 hover:text-white"
             >
               ← Back
             </button>

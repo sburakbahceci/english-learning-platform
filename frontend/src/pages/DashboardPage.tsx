@@ -46,7 +46,7 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Lingoria
             </h1>
-            <p className="text-xs text-gray-500">AI English Learning</p>
+            <p className="text-xs text-gray-500">Unlock Your Next Level</p>
           </div>
 
           {/* User Info */}
