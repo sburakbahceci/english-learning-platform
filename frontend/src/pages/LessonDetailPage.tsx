@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { lessonsService } from '../services/lessons.service';
+import { useAuthStore } from '../store/authStore';
 import type { LessonDetail, Exercise } from '../types';
 
 export default function LessonDetailPage() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
+  const { user, setAuth } = useAuthStore();
 
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -13,8 +15,11 @@ export default function LessonDetailPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
-  const [phase, setPhase] = useState<'learn' | 'exercise' | 'complete'>('learn');
+  const [phase, setPhase] = useState<
+    'learn' | 'exercise' | 'retry' | 'complete'
+  >('learn');
   const [startTime] = useState(Date.now());
+  const [wrongAnswers, setWrongAnswers] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -33,25 +38,73 @@ export default function LessonDetailPage() {
   }, [lessonId]);
 
   const handleAnswerSelect = (answer: string) => {
-    if (isAnswered) return;
+    if (isAnswered || !lesson) return;
     setSelectedAnswer(answer);
     setIsAnswered(true);
 
-    if (lesson && answer === lesson.content.exercises[currentExercise].answer) {
-      setScore((prev) => prev + 1);
+    const actualIndex =
+      phase === 'retry' ? wrongAnswers[currentExercise] : currentExercise;
+    const currentQ = lesson.content.exercises[actualIndex];
+
+    if (answer === currentQ.answer) {
+      if (phase === 'exercise') {
+        setScore((prev) => prev + 1);
+      }
+    } else {
+      if (phase === 'exercise' && !wrongAnswers.includes(actualIndex)) {
+        setWrongAnswers((prev) => [...prev, actualIndex]);
+      }
     }
   };
-
   const handleNextExercise = () => {
     if (!lesson) return;
 
-    if (currentExercise < lesson.content.exercises.length - 1) {
-      setCurrentExercise((prev) => prev + 1);
-      setSelectedAnswer(null);
-      setIsAnswered(false);
-    } else {
-      setPhase('complete');
-      handleComplete();
+    if (phase === 'exercise') {
+      // ANA AŞAMA MANTIĞI
+      if (currentExercise < lesson.content.exercises.length - 1) {
+        setCurrentExercise((prev) => prev + 1);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+      } else {
+        // Tüm sorular bitti, yanlış var mı kontrol et
+        if (wrongAnswers.length > 0) {
+          setPhase('retry');
+          setCurrentExercise(0);
+          setSelectedAnswer(null);
+          setIsAnswered(false);
+        } else {
+          setPhase('complete');
+          handleComplete();
+        }
+      }
+    } else if (phase === 'retry') {
+      // TEKRAR AŞAMASI MANTIĞI (Döngü burada kuruluyor)
+      const actualIndex = wrongAnswers[currentExercise];
+      const isCorrect =
+        selectedAnswer === lesson.content.exercises[actualIndex].answer;
+
+      if (isCorrect) {
+        const updatedWrongAnswers = wrongAnswers.filter(
+          (_, index) => index !== currentExercise
+        );
+        setWrongAnswers(updatedWrongAnswers);
+
+        if (updatedWrongAnswers.length === 0) {
+          setPhase('complete');
+          handleComplete();
+        } else {
+          const nextIdx =
+            currentExercise >= updatedWrongAnswers.length ? 0 : currentExercise;
+          setCurrentExercise(nextIdx);
+          setSelectedAnswer(null);
+          setIsAnswered(false);
+        }
+      } else {
+        const nextIdx = (currentExercise + 1) % wrongAnswers.length;
+        setCurrentExercise(nextIdx);
+        setSelectedAnswer(null);
+        setIsAnswered(false);
+      }
     }
   };
 
@@ -60,14 +113,23 @@ export default function LessonDetailPage() {
       if (!lessonId || !lesson) return;
 
       const timeSpentSeconds = Math.round((Date.now() - startTime) / 1000);
-      const finalScore = Math.round(
-        (score / lesson.content.exercises.length) * 100
-      );
+      const totalQuestions = lesson.content.exercises.length;
+      const finalScore = Math.round((score / totalQuestions) * 100);
 
-      await lessonsService.completeLesson(lessonId, {
+      const result = await lessonsService.completeLesson(lessonId, {
         score: finalScore,
         timeSpentSeconds,
       });
+
+      if (user && result.data.xpEarned) {
+        setAuth(
+          {
+            ...user,
+            totalXp: user.totalXp + result.data.xpEarned,
+          },
+          useAuthStore.getState().token || ''
+        );
+      }
     } catch (error) {
       console.error('Failed to complete lesson:', error);
     }
@@ -103,7 +165,6 @@ export default function LessonDetailPage() {
   if (phase === 'learn') {
     return (
       <div className="min-h-screen bg-gray-100">
-        {/* Header */}
         <header className="bg-white shadow">
           <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center gap-4">
             <button
@@ -113,8 +174,13 @@ export default function LessonDetailPage() {
               ← Back
             </button>
             <div>
-              <p className="text-sm text-gray-500">{lesson.level.code} · {lesson.level.name}</p>
-              <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+              <p className="text-xs text-purple-600 font-semibold">LINGORIA</p>
+              <p className="text-sm text-gray-500">
+                {lesson.level.code} · {lesson.level.name}
+              </p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {lesson.title}
+              </h1>
             </div>
             <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">
               <span>⏱️ {lesson.estimatedMinutes} min</span>
@@ -134,12 +200,10 @@ export default function LessonDetailPage() {
             </p>
           </div>
 
-          {/* Rules (Grammar) */}
+          {/* Rules */}
           {lesson.content.rules && lesson.content.rules.length > 0 && (
             <div className="bg-blue-50 rounded-lg shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-3">
-                📋 Rules
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-3">📋 Rules</h2>
               <ul className="space-y-2">
                 {lesson.content.rules.map((rule, index) => (
                   <li key={index} className="flex items-start gap-2">
@@ -166,14 +230,14 @@ export default function LessonDetailPage() {
                     className="flex items-start gap-2 text-gray-700"
                   >
                     <span className="text-green-600">→</span>
-                    <span className="italic">"{example}"</span>
+                    <span className="italic">&quot;{example}&quot;</span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
 
-          {/* Vocabulary Words */}
+          {/* Vocabulary */}
           {lesson.content.words && lesson.content.words.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -199,7 +263,7 @@ export default function LessonDetailPage() {
                       {word.definition}
                     </p>
                     <p className="text-sm italic text-gray-500">
-                      "{word.example}"
+                      &quot;{word.example}&quot;
                     </p>
                   </div>
                 ))}
@@ -211,7 +275,7 @@ export default function LessonDetailPage() {
           <div className="flex justify-center pb-8">
             <button
               onClick={() => setPhase('exercise')}
-              className="px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-lg"
+              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
             >
               Start Exercises →
             </button>
@@ -221,75 +285,75 @@ export default function LessonDetailPage() {
     );
   }
 
-  // EXERCISE PHASE
-  if (phase === 'exercise') {
-    const exercise: Exercise = lesson.content.exercises[currentExercise];
+  // RETRY PHASE (Yanlış yapılan sorular)
+  if (phase === 'retry') {
+    const wrongQuestionIndex = wrongAnswers[currentExercise];
+    const exercise: Exercise = lesson.content.exercises[wrongQuestionIndex];
     const isCorrect = selectedAnswer === exercise.answer;
 
     return (
       <div className="min-h-screen bg-gray-100">
-        {/* Header */}
         <header className="bg-white shadow">
           <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-900">{lesson.title}</h1>
+              <h1 className="text-xl font-bold text-orange-600">
+                📝 Review Wrong Answers
+              </h1>
               <span className="text-gray-500">
-                {currentExercise + 1} / {lesson.content.exercises.length}
+                {currentExercise + 1} / {wrongAnswers.length}
               </span>
             </div>
-
-            {/* Exercise Progress Bar */}
             <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all"
+                className="bg-orange-500 h-2 rounded-full transition-all"
                 style={{
-                  width: `${((currentExercise + 1) / lesson.content.exercises.length) * 100}%`,
+                  width: `${((currentExercise + 1) / wrongAnswers.length) * 100}%`,
                 }}
-              ></div>
+              />
             </div>
           </div>
         </header>
 
         <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <div className="bg-white rounded-xl shadow-lg p-8">
-            {/* Score */}
-            <div className="flex justify-end mb-6">
-              <span className="text-sm font-medium text-gray-500">
-                Score: {score}/{currentExercise + (isAnswered ? 1 : 0)}
-              </span>
-            </div>
-
-            {/* Question */}
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900">
                 {exercise.question}
               </h2>
             </div>
 
-            {/* Options */}
             {exercise.options && (
-              <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 {exercise.options.map((option, index) => {
                   let buttonStyle =
-                    'border-2 border-gray-200 text-gray-700 hover:border-blue-400 hover:bg-blue-50';
+                    'bg-white border-2 border-gray-300 text-gray-800 hover:border-blue-400 hover:bg-blue-50 cursor-pointer';
 
                   if (isAnswered) {
                     if (option === exercise.answer) {
-                      buttonStyle = 'border-2 border-green-500 bg-green-50 text-green-700';
-                    } else if (option === selectedAnswer && option !== exercise.answer) {
-                      buttonStyle = 'border-2 border-red-500 bg-red-50 text-red-700';
+                      buttonStyle =
+                        'bg-green-50 border-2 border-green-500 text-green-700';
+                    } else if (
+                      option === selectedAnswer &&
+                      option !== exercise.answer
+                    ) {
+                      buttonStyle =
+                        'bg-red-50 border-2 border-red-500 text-red-700';
                     }
                   } else if (selectedAnswer === option) {
-                    buttonStyle = 'border-2 border-blue-500 bg-blue-50 text-blue-700';
+                    buttonStyle =
+                      'bg-blue-50 border-2 border-blue-500 text-blue-700';
                   }
 
                   return (
                     <button
                       key={index}
                       onClick={() => handleAnswerSelect(option)}
-                      className={`p-4 rounded-lg font-medium transition-all text-lg ${buttonStyle}`}
                       disabled={isAnswered}
+                      className={`p-4 rounded-lg font-medium transition-all text-lg ${buttonStyle}`}
                     >
+                      <span className="font-bold text-gray-400 mr-2">
+                        {String.fromCharCode(65 + index)}.
+                      </span>
                       {option}
                     </button>
                   );
@@ -297,7 +361,130 @@ export default function LessonDetailPage() {
               </div>
             )}
 
-            {/* Feedback */}
+            {isAnswered && (
+              <div
+                className={`p-4 rounded-lg mb-6 text-center ${
+                  isCorrect
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-red-50 text-red-700'
+                }`}
+              >
+                <p className="text-xl font-bold mb-1">
+                  {isCorrect ? '🎉 Correct!' : '❌ Wrong!'}
+                </p>
+                {!isCorrect && (
+                  <p>
+                    Correct answer: <strong>{exercise.answer}</strong>
+                  </p>
+                )}
+                {exercise.explanation && (
+                  <p className="text-sm mt-2 italic">{exercise.explanation}</p>
+                )}
+              </div>
+            )}
+
+            {isAnswered && (
+              <div className="flex justify-center">
+                <button
+                  onClick={handleNextExercise}
+                  className="px-8 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
+                >
+                  {currentExercise < wrongAnswers.length - 1
+                    ? 'Next Question →'
+                    : 'Finish Review 🎉'}
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // EXERCISE PHASE (Normal sorular)
+  if (phase === 'exercise') {
+    const exercise: Exercise = lesson.content.exercises[currentExercise];
+    const isCorrect = selectedAnswer === exercise.answer;
+
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <header className="bg-white shadow">
+          <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-xl font-bold text-gray-900">
+                {lesson.title}
+              </h1>
+              <span className="text-gray-500">
+                {currentExercise + 1} / {lesson.content.exercises.length}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-600 h-2 rounded-full transition-all"
+                style={{
+                  width: `${((currentExercise + 1) / lesson.content.exercises.length) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="flex justify-end mb-6">
+              <span className="text-sm font-medium text-gray-500">
+                Score: {score}/{currentExercise + (isAnswered ? 1 : 0)}
+              </span>
+            </div>
+
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {exercise.question}
+              </h2>
+            </div>
+
+            {exercise.options && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                {exercise.options.map((option, index) => {
+                  let buttonStyle =
+                    'bg-white border-2 border-gray-300 text-gray-800 hover:border-blue-400 hover:bg-blue-50 cursor-pointer';
+
+                  if (isAnswered) {
+                    if (option === exercise.answer) {
+                      buttonStyle =
+                        'bg-green-50 border-2 border-green-500 text-green-700';
+                    } else if (
+                      option === selectedAnswer &&
+                      option !== exercise.answer
+                    ) {
+                      buttonStyle =
+                        'bg-red-50 border-2 border-red-500 text-red-700';
+                    } else {
+                      buttonStyle =
+                        'bg-gray-50 border-2 border-gray-200 text-gray-400';
+                    }
+                  } else if (selectedAnswer === option) {
+                    buttonStyle =
+                      'bg-blue-50 border-2 border-blue-500 text-blue-700';
+                  }
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(option)}
+                      disabled={isAnswered}
+                      className={`p-4 rounded-lg font-medium transition-all text-lg ${buttonStyle}`}
+                    >
+                      <span className="font-bold text-gray-400 mr-2">
+                        {String.fromCharCode(65 + index)}.
+                      </span>
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {isAnswered && (
               <div
                 className={`p-4 rounded-lg mb-6 text-center ${
@@ -317,7 +504,6 @@ export default function LessonDetailPage() {
               </div>
             )}
 
-            {/* Next Button */}
             {isAnswered && (
               <div className="flex justify-center">
                 <button
@@ -343,7 +529,7 @@ export default function LessonDetailPage() {
     );
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">
             {finalScore >= 80 ? '🎉' : finalScore >= 60 ? '👍' : '💪'}
@@ -353,7 +539,6 @@ export default function LessonDetailPage() {
           </h1>
           <p className="text-gray-600 mb-6">{lesson.title}</p>
 
-          {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-2xl font-bold text-blue-600">{finalScore}%</p>
@@ -373,11 +558,10 @@ export default function LessonDetailPage() {
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="space-y-3">
             <button
               onClick={() => navigate(-1)}
-              className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all"
             >
               Back to Lessons
             </button>

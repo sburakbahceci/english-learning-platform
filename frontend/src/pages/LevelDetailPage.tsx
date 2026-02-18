@@ -53,10 +53,14 @@ export default function LevelDetailPage() {
 
   const getLessonIcon = (type: string) => {
     switch (type) {
-      case 'grammar': return '📖';
-      case 'vocabulary': return '📚';
-      case 'practice': return '✍️';
-      default: return '📝';
+      case 'grammar':
+        return '📖';
+      case 'vocabulary':
+        return '📚';
+      case 'practice':
+        return '✍️';
+      default:
+        return '📝';
     }
   };
 
@@ -101,11 +105,17 @@ export default function LevelDetailPage() {
             >
               ← Back
             </button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {level.code} - {level.name}
-              </h1>
-              <p className="text-gray-600 mt-1">{level.description}</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  Lingoria
+                </h1>
+                <span className="text-gray-400">|</span>
+                <span className="text-lg text-gray-600">
+                  {level.code} - {level.name}
+                </span>
+              </div>
+              <p className="text-gray-600">{level.description}</p>
             </div>
           </div>
         </div>
@@ -129,9 +139,11 @@ export default function LevelDetailPage() {
             <div
               className="bg-blue-600 h-2 rounded-full transition-all"
               style={{
-                width: `${lessons.length > 0
-                  ? (completions.length / lessons.length) * 100
-                  : 0}%`,
+                width: `${
+                  lessons.length > 0
+                    ? (completions.length / lessons.length) * 100
+                    : 0
+                }%`,
               }}
             ></div>
           </div>

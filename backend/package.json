@@ -1,7 +1,7 @@
 {
-  "name": "backend",
+  "name": "lingoria-backend",
   "version": "1.0.0",
-  "description": "English Learning Platform Backend",
+  "description": "Lingoria AI-Powered English Learning Platform - Backend API",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
@@ -12,7 +12,7 @@
     "prisma:pull": "prisma db pull"
   },
   "keywords": [],
-  "author": "",
+  "author": "Lingoria Team <hello.lingoria@gmail.com>",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "5.22.0",

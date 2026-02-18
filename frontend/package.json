@@ -1,7 +1,9 @@
 {
-  "name": "frontend",
+  "name": "lingoria-frontend",
+  "version": "1.0.0",
+  "description": "Lingoria AI-Powered English Learning Platform - Frontend",
+  "author": "Lingoria Team <hello.lingoria@gmail.com>",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

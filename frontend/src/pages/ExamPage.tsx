@@ -179,10 +179,18 @@ export default function ExamPage() {
   // READY
   if (phase === 'ready') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">📝</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Level Exam</h1>
+
+          {/* Lingoria Branding */}
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-1">
+              Lingoria Level Exam
+            </h1>
+            <p className="text-sm text-gray-500">AI-Powered Assessment</p>
+          </div>
+
           <p className="text-gray-600 mb-8">
             Are you ready to test your knowledge?
           </p>
@@ -223,13 +231,13 @@ export default function ExamPage() {
           <div className="space-y-3">
             <button
               onClick={() => setPhase('exam')}
-              className="w-full py-4 bg-blue-600 text-white text-lg font-bold rounded-xl hover:bg-blue-700 transition-colors"
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
             >
               Start Exam 🚀
             </button>
             <button
               onClick={() => navigate(-1)}
-              className="w-full py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50"
+              className="w-full py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
             >
               Go Back
             </button>
@@ -430,14 +438,14 @@ export default function ExamPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {options.map((option, index) => {
               let style =
-                'border-2 border-gray-200 text-gray-700 hover:border-blue-400 hover:bg-blue-50 cursor-pointer';
+                'bg-white border-2 border-gray-300 text-gray-800 hover:border-blue-400 hover:bg-blue-50 cursor-pointer';
 
               if (selectedAnswer) {
                 if (option === selectedAnswer) {
-                  style = 'border-2 border-blue-500 bg-blue-50 text-blue-700';
+                  style = 'bg-blue-50 border-2 border-blue-500 text-blue-700';
                 } else {
                   style =
-                    'border-2 border-gray-200 text-gray-400 cursor-not-allowed opacity-60';
+                    'bg-gray-50 border-2 border-gray-200 text-gray-400 cursor-not-allowed opacity-60';
                 }
               }
 

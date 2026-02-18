@@ -84,9 +84,7 @@ export interface Exercise {
   question: string;
   answer: string;
   options?: string[];
-  type?: 'multiple_choice' | 'writing';
-  prompt?: string;
-  minWords?: number;
+  explanation?: string;
 }
 
 export interface LessonCompletion {

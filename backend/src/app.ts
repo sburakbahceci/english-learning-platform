@@ -35,8 +35,10 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/api/v1', (_req: Request, res: Response) => {
   res.json({
-    message: 'English Learning Platform API v1',
+    name: 'Lingoria API',
+    description: 'AI-Powered English Learning Platform',
     version: '1.0.0',
+    contact: 'hello.lingoria@gmail.com',
     endpoints: {
       health: '/health',
       auth: '/api/v1/auth/google',

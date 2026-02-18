@@ -41,9 +41,15 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            English Learning Platform
-          </h1>
+          {/* Logo */}
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              Lingoria
+            </h1>
+            <p className="text-xs text-gray-500">AI English Learning</p>
+          </div>
+
+          {/* User Info */}
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
@@ -67,10 +73,13 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-8">
+      <main className="w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
           Choose Your Level
         </h2>
+        <p className="text-gray-600 mb-8">
+          Start your English learning journey with Lingoria
+        </p>
 
         {loading ? (
           <div className="text-center py-12">

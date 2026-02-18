@@ -11,14 +11,22 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+    <div className="min-h-screen w-full bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            English Learning Platform
-          </h1>
+          {/* Logo */}
+          <div className="mb-6">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              Lingoria
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">Learn English with AI</p>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Welcome to Lingoria
+          </h2>
           <p className="text-gray-600">
-            Master English from A1 to C2 with gamified learning
+            Master English from A1 to C2 with gamified learning powered by AI
           </p>
         </div>
 
@@ -39,11 +47,15 @@ export default function HomePage() {
         </div>
 
         <div className="mt-8 text-center">
-          <div className="flex justify-center gap-4 text-sm text-gray-600">
+          <div className="flex justify-center gap-4 text-sm text-gray-600 mb-4">
             <span>✓ 6 CEFR Levels</span>
+            <span>✓ AI-Powered</span>
             <span>✓ Gamified</span>
-            <span>✓ Free</span>
           </div>
+          <p className="text-xs text-gray-400">
+            By continuing, you agree to Lingoria's Terms of Service and Privacy
+            Policy
+          </p>
         </div>
       </div>
     </div>
