@@ -41,12 +41,13 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          {/* Logo */}
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Lingoria
-            </h1>
-            <p className="text-xs text-gray-500">Unlock Your Next Level</p>
+          {/* Logo - 801x312 oranında, yükseklik 40px */}
+          <div className="flex items-center">
+            <img
+              src="/lingoria_text_logo.png"
+              alt="Lingoria"
+              className="h-10 w-auto"
+            />
           </div>
 
           {/* User Info */}
@@ -64,7 +65,7 @@ export default function DashboardPage() {
             )}
             <button
               onClick={handleLogout}
-              className="text-sm text-red-600 hover:text-red-700"
+              className="text-sm text-red-600 hover:text-red-700 font-medium"
             >
               Logout
             </button>

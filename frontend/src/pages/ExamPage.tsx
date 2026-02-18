@@ -181,15 +181,18 @@ export default function ExamPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+          <div className="mb-6 flex justify-center">
+            <img
+              src="/lingoria_text_logo.png"
+              alt="Lingoria"
+              className="h-16 w-auto"
+            />
+          </div>
+
           <div className="text-6xl mb-4">📝</div>
 
-          {/* Lingoria Branding */}
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-1">
-              Lingoria Level Exam
-            </h1>
-            <p className="text-sm text-gray-500">AI-Powered Assessment</p>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Level Exam</h1>
+          <p className="text-sm text-gray-500 mb-6">AI-Powered Assessment</p>
 
           <p className="text-gray-600 mb-8">
             Are you ready to test your knowledge?

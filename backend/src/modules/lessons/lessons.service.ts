@@ -54,28 +54,29 @@ export class LessonsService {
   async completeLesson(
     userId: string,
     lessonId: string,
-    data: {
-      score?: number;
-      timeSpentSeconds?: number;
-    }
+    data: { score?: number; timeSpentSeconds?: number }
   ) {
     try {
-      // Get lesson info
+      console.log('🔄 Processing lesson completion:', {
+        userId,
+        lessonId,
+        data,
+      });
+
+      // Lesson var mı kontrol et
       const lesson = await prisma.lesson.findUnique({
         where: { id: lessonId },
-        select: {
-          id: true,
-          levelId: true,
-          xpReward: true,
-        },
+        include: { level: true },
       });
 
       if (!lesson || !lesson.levelId) {
         throw new Error('Lesson not found');
       }
 
-      // Check if already completed
-      const existing = await prisma.lessonCompletion.findUnique({
+      console.log('✅ Lesson found:', lesson.title);
+
+      // Daha önce tamamlanmış mı kontrol et
+      const existingCompletion = await prisma.lessonCompletion.findUnique({
         where: {
           userId_lessonId: {
             userId,
@@ -84,34 +85,41 @@ export class LessonsService {
         },
       });
 
-      if (existing) {
-        throw new Error('Lesson already completed');
+      if (existingCompletion) {
+        console.log('⚠️ Lesson already completed, returning existing data...');
+        return {
+          lessonCompletion: existingCompletion,
+          xpEarned: 0, // ← XP verilmez
+          message: 'Lesson already completed',
+          alreadyCompleted: true, // ← Frontend için flag
+        };
       }
 
-      // Create completion record
-      const completion = await prisma.lessonCompletion.create({
+      // Yeni completion oluştur
+      const lessonCompletion = await prisma.lessonCompletion.create({
         data: {
           userId,
           lessonId,
-          score: data.score ?? null, // ← DEĞİŞTİ
-          xpEarned: lesson.xpReward ?? 0, // ← DEĞİŞTİ
-          timeSpentSeconds: data.timeSpentSeconds ?? null, // ← DEĞİŞTİ
+          score: data.score ?? null,
+          timeSpentSeconds: data.timeSpentSeconds ?? null,
         },
       });
 
-      // Update user's total XP
-      const xpToAdd = lesson.xpReward ?? 0; // ← YENİ
+      console.log('✅ Completion created:', lessonCompletion.id);
 
+      // XP ekle
       await prisma.user.update({
         where: { id: userId },
         data: {
           totalXp: {
-            increment: xpToAdd, // ← DEĞİŞTİ
+            increment: lesson.xpReward ?? 0,
           },
         },
       });
 
-      // Update user progress
+      console.log('✅ XP updated:', lesson.xpReward);
+
+      // User progress güncelle
       const userProgress = await prisma.userProgress.findUnique({
         where: {
           userId_levelId: {
@@ -122,28 +130,42 @@ export class LessonsService {
       });
 
       if (userProgress) {
-        // Null check ve default değerler
-        const currentCompleted = userProgress.lessonsCompleted ?? 0; // ← YENİ
-        const totalLessons = userProgress.totalLessons ?? 0; // ← YENİ
+        const totalLessons = await prisma.lesson.count({
+          where: { levelId: lesson.levelId },
+        });
 
-        const newCompletedCount = currentCompleted + 1; // ← DEĞİŞTİ
-        const allLessonsCompleted = newCompletedCount >= totalLessons; // ← DEĞİŞTİ
+        const completedCount = await prisma.lessonCompletion.count({
+          where: {
+            userId,
+            lesson: { levelId: lesson.levelId },
+          },
+        });
+
+        const allCompleted = completedCount >= totalLessons;
 
         await prisma.userProgress.update({
           where: { id: userProgress.id },
           data: {
-            lessonsCompleted: newCompletedCount,
-            isExamUnlocked: allLessonsCompleted,
-            status: allLessonsCompleted ? 'completed' : 'in_progress',
+            lessonsCompleted: completedCount,
+            isExamUnlocked: allCompleted,
           },
+        });
+
+        console.log('✅ Progress updated:', {
+          completed: completedCount,
+          total: totalLessons,
+          examUnlocked: allCompleted,
         });
       }
 
       return {
-        completion,
-        xpEarned: xpToAdd, // ← DEĞİŞTİ
+        lessonCompletion,
+        xpEarned: lesson.xpReward ?? 0,
+        message: 'Lesson completed successfully',
+        alreadyCompleted: false,
       };
     } catch (error) {
+      console.error('❌ Service error:', error);
       throw error;
     }
   }

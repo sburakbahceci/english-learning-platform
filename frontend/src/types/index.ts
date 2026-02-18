@@ -59,6 +59,7 @@ export interface Lesson {
 export interface LessonDetail extends Lesson {
   content: LessonContent;
   level: {
+    id: string;
     code: string;
     name: string;
   };
@@ -97,6 +98,7 @@ export interface LessonCompletion {
 export interface CompleteLessonResult {
   completion: LessonCompletion;
   xpEarned: number;
+  alreadyCompleted: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -155,4 +157,43 @@ export interface ExamAttempt {
   passed: boolean;
   attemptNumber: number;
   attemptedAt: string;
+}
+
+export interface ExerciseAttempt {
+  questionIndex: number;
+  question: string;
+  userAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  attemptNumber: number; // 1 = first try, 2 = retry
+}
+
+export interface LessonReport {
+  totalQuestions: number;
+  correctFirstTry: number;
+  correctAfterRetry: number;
+  stillWrong: number;
+  accuracy: number;
+  weakAreas: string[];
+  attempts: ExerciseAttempt[];
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+// types/index.ts içinde bulun veya ekleyin
+export interface CompleteLessonPayload {
+  score: number;
+  timeSpentSeconds: number;
+  report?: LessonReport;
+}
+
+export interface LessonStats {
+  accuracy: number;
+  correctFirstTry?: number;
+  correctAfterRetry?: number;
+  stillWrong?: number;
 }

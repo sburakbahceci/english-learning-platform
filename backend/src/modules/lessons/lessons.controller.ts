@@ -53,36 +53,42 @@ export class LessonsController {
   // POST /api/v1/lessons/:lessonId/complete
   async completeLesson(req: Request, res: Response) {
     try {
-      if (!req.userId) {
+      const { lessonId } = req.params;
+      const { score, timeSpentSeconds } = req.body;
+      const userId = req.userId; // ← req.user yerine req.userId
+
+      if (!userId) {
         return res.status(401).json({
           success: false,
-          error: 'Unauthorized',
+          message: 'Unauthorized',
         });
       }
 
-      const { lessonId } = req.params;
-      const { score, timeSpentSeconds } = req.body;
-
-      const result = await lessonsService.completeLesson(req.userId, lessonId, {
+      console.log('📥 Complete lesson request:', {
+        userId,
+        lessonId,
         score,
         timeSpentSeconds,
       });
 
-      res.json({
+      const result = await lessonsService.completeLesson( // ← this.lessonsService yerine lessonsService
+        userId,
+        lessonId,
+        { score, timeSpentSeconds }
+      );
+
+      console.log('✅ Lesson completed successfully:', result);
+
+      return res.json({
         success: true,
         data: result,
-        message: `Lesson completed! +${result.xpEarned} XP`,
       });
-    } catch (error) {
-      const statusCode =
-        error instanceof Error && error.message === 'Lesson already completed'
-          ? 409
-          : 500;
-
-      res.status(statusCode).json({
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      console.error('❌ Complete lesson error:', error);
+      return res.status(500).json({
         success: false,
-        error:
-          error instanceof Error ? error.message : 'Failed to complete lesson',
+        message: error.message,
       });
     }
   }

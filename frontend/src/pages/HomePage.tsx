@@ -15,11 +15,12 @@ export default function HomePage() {
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           {/* Logo */}
-          <div className="mb-6">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Lingoria
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">Unlock Your Next Level</p>
+          <div className="mb-6 flex justify-center">
+            <img
+              src="/lingoria_text_logo.png"
+              alt="Lingoria"
+              className="h-20 w-auto"
+            />
           </div>
 
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
