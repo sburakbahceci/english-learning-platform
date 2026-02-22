@@ -33,38 +33,16 @@ export class UsersService {
             },
           },
         },
-        orderBy: {
-          level: {
-            orderIndex: 'asc',
-          },
-        },
       });
 
-      // Get achievements
-      const achievements = await prisma.userAchievement.findMany({
-        where: { userId },
-        include: {
-          achievement: {
-            select: {
-              code: true,
-              name: true,
-              description: true,
-              iconUrl: true,
-              xpReward: true,
-            },
-          },
-        },
-        orderBy: {
-          unlockedAt: 'desc',
-        },
-      });
+      // Achievements kaldırıldı (tablo yok)
 
       return {
         ...user,
         progress,
-        achievements: achievements.map((ua) => ua.achievement),
       };
     } catch (error) {
+      console.error('Get user profile error:', error);
       throw error;
     }
   }
@@ -86,6 +64,7 @@ export class UsersService {
 
       return user;
     } catch (error) {
+      console.error('Update user profile error:', error);
       throw new Error('Failed to update user profile');
     }
   }

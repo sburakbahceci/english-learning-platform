@@ -48,6 +48,14 @@ export default function DashboardPage() {
               alt="Lingoria"
               className="h-10 w-auto"
             />
+            {/* AI Chat Link */}
+            <button
+              onClick={() => navigate('/ai-chat')}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+            >
+              <span>🤖</span>
+              <span className="font-medium">Lingoria AI Assistant</span>
+            </button>
           </div>
 
           {/* User Info */}
@@ -117,6 +125,42 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+        {/* AI Assistant Card */}
+        <div className="mt-8">
+          <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 rounded-2xl shadow-lg p-8 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="text-5xl">🤖</div>
+                  <div>
+                    <h3 className="text-2xl font-bold">
+                      Lingoria AI English Assistant
+                    </h3>
+                    <p className="text-purple-100">
+                      Your personal English learning companion
+                    </p>
+                  </div>
+                </div>
+                <p className="text-white/90 mb-4">
+                  Get instant help with grammar, vocabulary, pronunciation, and
+                  more. Available 24/7!
+                </p>
+                <ul className="space-y-2 text-sm text-white/80 mb-6">
+                  <li>✓ Ask questions about English grammar</li>
+                  <li>✓ Practice conversations</li>
+                  <li>✓ Get vocabulary explanations</li>
+                  <li>✓ Improve your writing skills</li>
+                </ul>
+              </div>
+              <button
+                onClick={() => navigate('/ai-chat')}
+                className="px-8 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-gray-50 transition-all shadow-lg ml-6"
+              >
+                Start Chatting →
+              </button>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );

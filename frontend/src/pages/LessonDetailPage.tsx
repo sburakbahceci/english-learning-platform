@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { lessonsService } from '../services/lessons.service';
 import { useAuthStore } from '../store/authStore';
+import { aiService } from '../services/ai.service';
 import type {
   LessonDetail,
   Exercise,
@@ -28,7 +29,9 @@ export default function LessonDetailPage() {
   const [allAttempts, setAllAttempts] = useState<ExerciseAttempt[]>([]);
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false); // ← YENİ
+  const [isAlreadyCompleted, setIsAlreadyCompleted] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -139,6 +142,41 @@ export default function LessonDetailPage() {
         setSelectedAnswer(null);
         setIsAnswered(false);
       }
+    }
+  };
+
+  const handleExplainWithAI = async (
+    question: string,
+    userAnswer: string | null,
+    correctAnswer: string
+  ) => {
+    console.log('🤖 AI Explain clicked:', {
+      question,
+      userAnswer,
+      correctAnswer,
+    });
+
+    try {
+      setLoadingExplanation(true);
+      setAiExplanation(null);
+
+      console.log('📤 Sending request to AI...');
+
+      const { data } = await aiService.explainAnswer({
+        question,
+        userAnswer,
+        correctAnswer,
+        context: lesson?.title,
+      });
+
+      console.log('📥 AI Response:', data);
+
+      setAiExplanation(data.explanation);
+    } catch (error) {
+      console.error('❌ Failed to get AI explanation:', error);
+      alert('Failed to get explanation. Please try again.');
+    } finally {
+      setLoadingExplanation(false);
     }
   };
 
@@ -445,7 +483,6 @@ export default function LessonDetailPage() {
   }
 
   // RETRY PHASE
-  // RETRY PHASE
   if (phase === 'retry') {
     const wrongQuestionIndex = wrongAnswers[currentExercise];
     const exercise: Exercise = lesson.content.exercises[wrongQuestionIndex];
@@ -526,18 +563,83 @@ export default function LessonDetailPage() {
 
             {isAnswered && (
               <div
-                className={`p-4 rounded-lg mb-6 text-center ${isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                className={`rounded-xl p-6 mb-6 border-2 ${
+                  isCorrect
+                    ? 'bg-green-50 border-green-200 text-green-700'
+                    : 'bg-red-50 border-red-200 text-red-700'
+                }`}
               >
-                <p className="text-xl font-bold mb-1">
-                  {isCorrect ? '🎉 Correct!' : '❌ Wrong!'}
-                </p>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="text-3xl">{isCorrect ? '✅' : '❌'}</div>
+                  <div className="flex-1">
+                    <p className="text-xl font-bold mb-2">
+                      {isCorrect ? 'Correct!' : 'Wrong Answer'}
+                    </p>
+                    {!isCorrect && (
+                      <>
+                        <p className="text-sm mb-1">
+                          <strong>Your answer:</strong> {selectedAnswer}
+                        </p>
+                        <p className="text-sm mb-2">
+                          <strong>Correct answer:</strong> {exercise.answer}
+                        </p>
+                      </>
+                    )}
+                    {exercise.explanation && (
+                      <p className="text-sm italic mt-2">
+                        💡 {exercise.explanation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* AI Explain Button - Sadece yanlış cevaplarda */}
                 {!isCorrect && (
-                  <p>
-                    Correct answer: <strong>{exercise.answer}</strong>
-                  </p>
-                )}
-                {exercise.explanation && (
-                  <p className="text-sm mt-2 italic">{exercise.explanation}</p>
+                  <div className="mt-4 border-t border-red-200 pt-4">
+                    <button
+                      onClick={() =>
+                        handleExplainWithAI(
+                          exercise.question,
+                          selectedAnswer,
+                          exercise.answer
+                        )
+                      }
+                      disabled={loadingExplanation}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                    >
+                      <span className="text-xl">🤖</span>
+                      {loadingExplanation ? (
+                        <>
+                          <span className="animate-pulse">
+                            Getting AI explanation...
+                          </span>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        </>
+                      ) : (
+                        'Explain with AI Teacher'
+                      )}
+                    </button>
+
+                    {/* AI Explanation */}
+                    {aiExplanation && (
+                      <div className="mt-4 p-5 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <span className="text-3xl">🤖</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-purple-900 mb-2 flex items-center gap-2">
+                              <span>AI Teacher Explains:</span>
+                              <span className="px-2 py-0.5 bg-purple-200 text-purple-800 text-xs rounded-full">
+                                Powered by Lingoria AI
+                              </span>
+                            </p>
+                            <p className="text-sm text-purple-900 whitespace-pre-wrap leading-relaxed">
+                              {aiExplanation}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

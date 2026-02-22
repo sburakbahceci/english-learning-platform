@@ -186,8 +186,8 @@ export class ExamsService {
     await prisma.userProgress.updateMany({
       where: { userId, levelId },
       data: {
-        examPassed: true,
-        status: 'completed',
+        examsPassed: { increment: 1 }, // ✅ examsPassed (çoğul)
+        isExamUnlocked: true,
       },
     });
 
@@ -216,8 +216,11 @@ export class ExamsService {
           data: {
             userId,
             levelId: nextLevel.id,
-            status: 'in_progress',
             totalLessons,
+            lessonsCompleted: 0,
+            isExamUnlocked: false,
+            examsPassed: 0,
+            examsFailed: 0,
           },
         });
       }
@@ -231,6 +234,14 @@ export class ExamsService {
   }
 
   private async handleExamFail(userId: string, levelId: string) {
+    // Update fail count
+    await prisma.userProgress.updateMany({
+      where: { userId, levelId },
+      data: {
+        examsFailed: { increment: 1 }, // ✅ examsFailed
+      },
+    });
+
     const recentFailures = await prisma.examAttempt.count({
       where: {
         userId,
@@ -249,8 +260,6 @@ export class ExamsService {
         data: {
           lessonsCompleted: 0,
           isExamUnlocked: false,
-          status: 'in_progress',
-          examPassed: false,
         },
       });
 

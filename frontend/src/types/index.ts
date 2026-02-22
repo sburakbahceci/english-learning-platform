@@ -197,3 +197,70 @@ export interface LessonStats {
   correctAfterRetry?: number;
   stillWrong?: number;
 }
+
+// ==================== PODCAST TYPES ====================
+
+export interface PodcastVocabulary {
+  id: string;
+  levelId: string;
+  word: string;
+  definition: string;
+  example: string;
+  translation: string | null;
+  timestampSeconds: number | null;
+  orderIndex: number;
+}
+
+export interface PodcastExercise {
+  id: string;
+  levelId: string;
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string | null;
+  orderIndex: number;
+}
+
+export interface LevelPodcast {
+  level: {
+    id: string;
+    code: string;
+    name: string;
+    podcastYoutubeId: string;
+    podcastTitle: string;
+    podcastDescription: string | null;
+    podcastDurationMinutes: number | null;
+  };
+  vocabularies: PodcastVocabulary[];
+  exercises: PodcastExercise[];
+}
+
+export interface PodcastCompletion {
+  id: string;
+  userId: string;
+  levelId: string;
+  score: number;
+  totalQuestions: number;
+  completedAt: string;
+}
+
+// ==================== AI CHAT TYPES ====================
+
+export interface AiChatMessage {
+  id: string;
+  sessionId: string;
+  userId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+
+export interface AiChatSession {
+  id: string;
+  userId: string;
+  sessionId: string;
+  isActive: boolean;
+  createdAt: string;
+  lastMessageAt: string;
+  messages?: AiChatMessage[];
+}

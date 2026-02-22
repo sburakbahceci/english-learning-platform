@@ -8,6 +8,8 @@ import levelsRoutes from './modules/levels/levels.routes';
 import usersRoutes from './modules/users/users.routes';
 import lessonsRoutes from './modules/lessons/lessons.routes';
 import examsRoutes from './modules/exams/exams.routes';
+import podcastsRoutes from './modules/podcasts/podcasts.routes';
+import aiRoutes from './modules/ai/ai.routes';
 
 dotenv.config();
 
@@ -23,6 +25,8 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
+app.use('/api/v1/podcasts', podcastsRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({

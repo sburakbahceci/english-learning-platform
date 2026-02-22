@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { levelsService } from '../services/levels.service';
 import { lessonsService } from '../services/lessons.service';
 import { useAuthStore } from '../store/authStore';
+import PodcastPlayer from '../components/PodcastPlayer';
 import type { Level, Lesson, LessonCompletion } from '../types';
 import jsPDF from 'jspdf';
 
@@ -14,6 +15,8 @@ interface LessonStats {
   stillWrong?: number;
 }
 
+type TabType = 'lessons' | 'reports' | 'podcast';
+
 export default function LevelDetailPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
@@ -23,7 +26,7 @@ export default function LevelDetailPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [completions, setCompletions] = useState<LessonCompletion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'lessons' | 'reports'>('lessons');
+  const [activeTab, setActiveTab] = useState<TabType>('lessons');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -234,7 +237,17 @@ export default function LevelDetailPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Lessons
+            📚 Lessons
+          </button>
+          <button
+            onClick={() => setActiveTab('podcast')}
+            className={`px-6 py-2.5 rounded-lg font-bold transition-all ${
+              activeTab === 'podcast'
+                ? 'bg-white text-purple-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            🎙️ Podcast
           </button>
           <button
             onClick={() => setActiveTab('reports')}
@@ -244,12 +257,13 @@ export default function LevelDetailPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            My Reports
+            📊 My Reports
           </button>
         </div>
 
         <AnimatePresence mode="wait">
-          {activeTab === 'lessons' ? (
+          {/* LESSONS TAB */}
+          {activeTab === 'lessons' && (
             <motion.div
               key="lessons-list"
               initial={{ opacity: 0, y: 10 }}
@@ -326,7 +340,22 @@ export default function LevelDetailPage() {
                 );
               })}
             </motion.div>
-          ) : (
+          )}
+
+          {/* PODCAST TAB */}
+          {activeTab === 'podcast' && (
+            <motion.div
+              key="podcast"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <PodcastPlayer levelId={level.id} />
+            </motion.div>
+          )}
+
+          {/* REPORTS TAB */}
+          {activeTab === 'reports' && (
             <motion.div
               key="reports-list"
               initial={{ opacity: 0, y: 10 }}

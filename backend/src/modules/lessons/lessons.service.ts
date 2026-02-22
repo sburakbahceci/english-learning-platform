@@ -181,16 +181,27 @@ export class LessonsService {
           },
         },
         select: {
+          id: true,
           lessonId: true,
           score: true,
-          xpEarned: true,
+          timeSpentSeconds: true,
           completedAt: true,
+          lesson: {
+            select: {
+              title: true,
+              xpReward: true,
+            },
+          },
+        },
+        orderBy: {
+          completedAt: 'desc',
         },
       });
 
       return completions;
     } catch (error) {
-      throw new Error('Failed to fetch lesson completions');
+      console.error('Get user lesson completions error:', error);
+      throw error;
     }
   }
 }
