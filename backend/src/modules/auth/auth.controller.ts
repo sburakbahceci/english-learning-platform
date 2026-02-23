@@ -9,15 +9,15 @@ export class AuthController {
   getGoogleAuthUrl(_req: Request, res: Response) {
     try {
       const url = authService.getAuthUrl();
-      res.json({ success: true, url });
+      res.redirect(url);
     } catch (error) {
+      console.error('Get auth URL error:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to generate auth URL',
       });
     }
   }
-
   async handleGoogleCallback(req: Request, res: Response) {
     try {
       const { code } = req.query;
