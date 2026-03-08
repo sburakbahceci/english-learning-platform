@@ -7,7 +7,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -99,4 +100,82 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* ========================================
+   HTML Content Highlighting
+   ======================================== */
+
+.html-content {
+  line-height: 1.8;
+}
+
+/* Highlighted Text (Red - for suffixes like -ed, -ing) */
+.html-content .highlight-red {
+  color: #ef4444;
+  font-weight: 700;
+  font-style: normal;
+  background-color: #fee2e2;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Highlighted Text (Blue - for irregular verbs) */
+.html-content .highlight-blue {
+  color: #3b82f6;
+  font-weight: 700;
+  font-style: normal;
+  background-color: #dbeafe;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Highlighted Text (Green - for regular verbs in examples) */
+.html-content .highlight-green {
+  color: #10b981;
+  font-weight: 700;
+  font-style: normal;
+  background-color: #d1fae5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Highlighted Text (Yellow - for important words) */
+.html-content .highlight-yellow {
+  color: #f59e0b;
+  font-weight: 700;
+  font-style: normal;
+  background-color: #fef3c7;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Highlighted Text (Purple - for grammar terms) */
+.html-content .highlight-purple {
+  color: #8b5cf6;
+  font-weight: 700;
+  font-style: normal;
+  background-color: #ede9fe;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Bold text */
+.html-content strong {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Emphasized text (NOT italic by default) */
+.html-content em {
+  font-style: normal;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* Examples - Normal style (not italic) */
+.html-content .example {
+  font-style: normal;
+  font-weight: 500;
+  color: #374151;
 }

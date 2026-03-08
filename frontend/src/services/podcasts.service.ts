@@ -1,34 +1,30 @@
 import api from './api';
-import type { LevelPodcast, PodcastCompletion } from '../types';
 
 export const podcastsService = {
-  async getLevelPodcast(
-    levelId: string
-  ): Promise<{ success: boolean; data: LevelPodcast }> {
-    const response = await api.get<{ success: boolean; data: LevelPodcast }>(
-      `/podcasts/level/${levelId}`
-    );
+  // Level'a göre podcast'leri getir
+  async getPodcastsByLevel(levelCode: string) {
+    const response = await api.get(`/podcasts/level/${levelCode}`);
     return response.data;
   },
 
-  async completePodcastExercises(
-    levelId: string,
-    data: { score: number; totalQuestions: number }
-  ): Promise<{ success: boolean; data: PodcastCompletion }> {
-    const response = await api.post<{
-      success: boolean;
-      data: PodcastCompletion;
-    }>(`/podcasts/level/${levelId}/complete`, data);
+  // Podcast detayını getir
+  async getPodcastById(id: string) {
+    const response = await api.get(`/podcasts/${id}`);
     return response.data;
   },
 
-  async getUserPodcastCompletion(
-    levelId: string
-  ): Promise<{ success: boolean; data: PodcastCompletion | null }> {
-    const response = await api.get<{
-      success: boolean;
-      data: PodcastCompletion | null;
-    }>(`/podcasts/level/${levelId}/completion`);
+  // Podcast'i tamamla
+  async completePodcast(podcastId: string, score: number, timeSpent: number) {
+    const response = await api.post(`/podcasts/${podcastId}/complete`, {
+      score,
+      timeSpent,
+    });
+    return response.data;
+  },
+
+  // Kullanıcının tamamladığı podcast'leri getir
+  async getUserCompletions() {
+    const response = await api.get('/podcasts/user/completions');
     return response.data;
   },
 };

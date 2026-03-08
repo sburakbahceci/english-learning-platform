@@ -57,11 +57,6 @@ export class LessonsService {
     data: { score?: number; timeSpentSeconds?: number }
   ) {
     try {
-      console.log('🔄 Processing lesson completion:', {
-        userId,
-        lessonId,
-        data,
-      });
 
       // Lesson var mı kontrol et
       const lesson = await prisma.lesson.findUnique({
@@ -72,8 +67,6 @@ export class LessonsService {
       if (!lesson || !lesson.levelId) {
         throw new Error('Lesson not found');
       }
-
-      console.log('✅ Lesson found:', lesson.title);
 
       // Daha önce tamamlanmış mı kontrol et
       const existingCompletion = await prisma.lessonCompletion.findUnique({
@@ -86,7 +79,6 @@ export class LessonsService {
       });
 
       if (existingCompletion) {
-        console.log('⚠️ Lesson already completed, returning existing data...');
         return {
           lessonCompletion: existingCompletion,
           xpEarned: 0, // ← XP verilmez
@@ -105,8 +97,6 @@ export class LessonsService {
         },
       });
 
-      console.log('✅ Completion created:', lessonCompletion.id);
-
       // XP ekle
       await prisma.user.update({
         where: { id: userId },
@@ -116,8 +106,6 @@ export class LessonsService {
           },
         },
       });
-
-      console.log('✅ XP updated:', lesson.xpReward);
 
       // User progress güncelle
       const userProgress = await prisma.userProgress.findUnique({
@@ -149,12 +137,6 @@ export class LessonsService {
             lessonsCompleted: completedCount,
             isExamUnlocked: allCompleted,
           },
-        });
-
-        console.log('✅ Progress updated:', {
-          completed: completedCount,
-          total: totalLessons,
-          examUnlocked: allCompleted,
         });
       }
 

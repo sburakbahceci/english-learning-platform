@@ -11,6 +11,13 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import PlacementTestPage from './pages/PlacementTestPage';
+import PlacementTestResultsPage from './pages/PlacementTestResultsPage';
+import ReadingPassagePage from './pages/ReadingPassagePage';
+import ReadingResultsPage from './pages/ReadingResultsPage';
+import WritingExercisesPage from './pages/WritingExercisesPage';
+import WritingPromptPage from './pages/WritingPromptPage';
+import WritingFeedbackPage from './pages/WritingFeedbackPage';
 
 function App() {
   return (
@@ -29,6 +36,28 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/placement-test" element={<PlacementTestPage />} />
+        <Route
+          path="/placement-test/results"
+          element={<PlacementTestResultsPage />}
+        />
+        <Route path="/reading/:passageId" element={<ReadingPassagePage />} />
+        <Route
+          path="/reading/results/:passageId"
+          element={<ReadingResultsPage />}
+        />
+        <Route
+          path="/writing/exercises/:levelCode"
+          element={<WritingExercisesPage />}
+        />
+        <Route
+          path="/writing/prompt/:promptId"
+          element={<WritingPromptPage />}
+        />
+        <Route
+          path="/writing/feedback/:submissionId"
+          element={<WritingFeedbackPage />}
+        />
       </Routes>
     </BrowserRouter>
   );

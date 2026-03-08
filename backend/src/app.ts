@@ -10,6 +10,9 @@ import lessonsRoutes from './modules/lessons/lessons.routes';
 import examsRoutes from './modules/exams/exams.routes';
 import podcastsRoutes from './modules/podcasts/podcasts.routes';
 import aiRoutes from './modules/ai/ai.routes';
+import placementTestRoutes from './modules/placement-test/placement-test.routes';
+import readingRoutes from './modules/reading/reading.routes';
+import writingRoutes from './modules/writing/writing.routes';
 
 dotenv.config();
 
@@ -25,8 +28,6 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(compression());
-app.use('/api/v1/podcasts', podcastsRoutes);
-app.use('/api/v1/ai', aiRoutes);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({
@@ -50,6 +51,9 @@ app.get('/api/v1', (_req: Request, res: Response) => {
       levels: '/api/v1/levels',
       lessons: '/api/v1/lessons',
       exams: '/api/v1/exams',
+      podcasts: '/api/v1/podcasts',
+      ai: '/api/v1/ai',
+      placementTest: '/api/v1/placement-test', // ✅ YENİ
     },
   });
 });
@@ -60,6 +64,11 @@ app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/levels', levelsRoutes);
 app.use('/api/v1/lessons', lessonsRoutes);
 app.use('/api/v1/exams', examsRoutes);
+app.use('/api/v1/podcasts', podcastsRoutes);
+app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/placement-test', placementTestRoutes);
+app.use('/api/v1/reading', readingRoutes);
+app.use('/api/v1/writing', writingRoutes);
 
 // 404 Handler
 app.use((_req: Request, res: Response) => {

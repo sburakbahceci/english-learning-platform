@@ -1,89 +1,135 @@
 import prisma from '../../config/database';
 
 export class PodcastsService {
-  async getLevelPodcast(levelId: string) {
-    const level = await prisma.level.findUnique({
-      where: { id: levelId },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        podcastYoutubeId: true,
-        podcastTitle: true,
-        podcastDescription: true,
-        podcastDurationMinutes: true,
-      },
-    });
+  // Level'a göre podcast'leri getir
+  async getPodcastsByLevel(levelCode: string) {
+    try {
+      // Level'ı bul
+      const level = await prisma.level.findUnique({
+        where: { code: levelCode },
+      });
 
-    if (!level || !level.podcastYoutubeId) {
-      throw new Error('Podcast not found for this level');
-    }
+      if (!level) {
+        throw new Error('Level not found');
+      }
 
-    // Vocabulary al
-    const vocabularies = await prisma.podcastVocabulary.findMany({
-      where: { levelId },
-      orderBy: { orderIndex: 'asc' },
-    });
-
-    // Exercises al
-    const exercises = await prisma.podcastExercise.findMany({
-      where: { levelId },
-      orderBy: { orderIndex: 'asc' },
-    });
-
-    return {
-      level,
-      vocabularies,
-      exercises,
-    };
-  }
-
-  async completePodcastExercises(
-    userId: string,
-    levelId: string,
-    data: { score: number; totalQuestions: number }
-  ) {
-    // Mevcut completion var mı kontrol et
-    const existing = await prisma.podcastCompletion.findUnique({
-      where: {
-        userId_levelId: {
-          userId,
-          levelId,
-        },
-      },
-    });
-
-    if (existing) {
-      // Update existing
-      return await prisma.podcastCompletion.update({
-        where: { id: existing.id },
-        data: {
-          score: data.score,
-          totalQuestions: data.totalQuestions,
-          completedAt: new Date(),
+      // O level'ın podcast'lerini getir
+      const podcasts = await prisma.podcast.findMany({
+        where: { levelId: level.id },
+        orderBy: { episodeNumber: 'asc' },
+        include: {
+          vocabularies: {
+            orderBy: { createdAt: 'asc' },
+          },
+          exercises: {
+            orderBy: { questionOrder: 'asc' },
+          },
         },
       });
-    } else {
-      // Create new
+
+      return podcasts;
+    } catch (error) {
+      console.error('Get podcasts by level error:', error);
+      throw error;
+    }
+  }
+
+  // Podcast ID'ye göre detay getir
+  async getPodcastById(podcastId: string) {
+    try {
+      const podcast = await prisma.podcast.findUnique({
+        where: { id: podcastId },
+        include: {
+          vocabularies: {
+            orderBy: { createdAt: 'asc' },
+          },
+          exercises: {
+            orderBy: { questionOrder: 'asc' },
+          },
+          level: {
+            select: {
+              code: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!podcast) {
+        throw new Error('Podcast not found');
+      }
+
+      return podcast;
+    } catch (error) {
+      console.error('Get podcast by id error:', error);
+      throw error;
+    }
+  }
+
+  // Podcast'i tamamla
+  async completePodcast(
+    userId: string,
+    podcastId: string,
+    score: number,
+    timeSpent: number
+  ) {
+    try {
+      // Daha önce tamamlanmış mı kontrol et
+      const existing = await prisma.podcastCompletion.findUnique({
+        where: {
+          userId_podcastId: {
+            userId,
+            podcastId,
+          },
+        },
+      });
+
+      if (existing) {
+        // Varsa güncelle
+        return await prisma.podcastCompletion.update({
+          where: { id: existing.id },
+          data: {
+            score,
+            timeSpent,
+            completedAt: new Date(),
+          },
+        });
+      }
+
+      // Yoksa yeni kayıt
       return await prisma.podcastCompletion.create({
         data: {
           userId,
-          levelId,
-          score: data.score,
-          totalQuestions: data.totalQuestions,
+          podcastId,
+          score,
+          timeSpent,
         },
       });
+    } catch (error) {
+      console.error('Complete podcast error:', error);
+      throw error;
     }
   }
 
-  async getUserPodcastCompletion(userId: string, levelId: string) {
-    return await prisma.podcastCompletion.findUnique({
-      where: {
-        userId_levelId: {
-          userId,
-          levelId,
+  // Kullanıcının podcast completion'larını getir
+  async getUserPodcastCompletions(userId: string) {
+    try {
+      return await prisma.podcastCompletion.findMany({
+        where: { userId },
+        include: {
+          podcast: {
+            select: {
+              id: true,
+              title: true,
+              levelId: true,
+            },
+          },
         },
-      },
-    });
+        orderBy: { completedAt: 'desc' },
+      });
+    } catch (error) {
+      console.error('Get user podcast completions error:', error);
+      throw error;
+    }
   }
 }

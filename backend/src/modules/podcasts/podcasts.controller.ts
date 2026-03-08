@@ -4,36 +4,51 @@ import { PodcastsService } from './podcasts.service';
 const podcastsService = new PodcastsService();
 
 export class PodcastsController {
-  // GET /api/v1/podcasts/level/:levelId
-  async getLevelPodcast(req: Request, res: Response) {
+  // GET /api/v1/podcasts/level/:levelCode
+  async getPodcastsByLevel(req: Request, res: Response) {
     try {
-      const { levelId } = req.params;
+      const { levelCode } = req.params;
 
-      const podcast = await podcastsService.getLevelPodcast(levelId);
+      const podcasts = await podcastsService.getPodcastsByLevel(levelCode);
+
+      res.json({
+        success: true,
+        data: podcasts,
+      });
+    } catch (error) {
+      console.error('Get podcasts by level error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get podcasts',
+      });
+    }
+  }
+
+  // GET /api/v1/podcasts/:id
+  async getPodcastById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const podcast = await podcastsService.getPodcastById(id);
 
       res.json({
         success: true,
         data: podcast,
       });
     } catch (error) {
-      const statusCode =
-        error instanceof Error && error.message.includes('not found')
-          ? 404
-          : 500;
-
-      res.status(statusCode).json({
+      console.error('Get podcast by id error:', error);
+      res.status(404).json({
         success: false,
-        message:
-          error instanceof Error ? error.message : 'Failed to fetch podcast',
+        message: 'Podcast not found',
       });
     }
   }
 
-  // POST /api/v1/podcasts/level/:levelId/complete
-  async completePodcastExercises(req: Request, res: Response) {
+  // POST /api/v1/podcasts/:id/complete
+  async completePodcast(req: Request, res: Response) {
     try {
-      const { levelId } = req.params;
-      const { score, totalQuestions } = req.body;
+      const { id } = req.params;
+      const { score, timeSpent } = req.body;
       const userId = req.userId;
 
       if (!userId) {
@@ -43,10 +58,11 @@ export class PodcastsController {
         });
       }
 
-      const completion = await podcastsService.completePodcastExercises(
+      const completion = await podcastsService.completePodcast(
         userId,
-        levelId,
-        { score, totalQuestions }
+        id,
+        score,
+        timeSpent
       );
 
       res.json({
@@ -54,18 +70,17 @@ export class PodcastsController {
         data: completion,
       });
     } catch (error) {
+      console.error('Complete podcast error:', error);
       res.status(500).json({
         success: false,
-        message:
-          error instanceof Error ? error.message : 'Failed to complete podcast',
+        message: 'Failed to complete podcast',
       });
     }
   }
 
-  // GET /api/v1/podcasts/level/:levelId/completion
-  async getUserPodcastCompletion(req: Request, res: Response) {
+  // GET /api/v1/podcasts/user/completions
+  async getUserCompletions(req: Request, res: Response) {
     try {
-      const { levelId } = req.params;
       const userId = req.userId;
 
       if (!userId) {
@@ -75,20 +90,18 @@ export class PodcastsController {
         });
       }
 
-      const completion = await podcastsService.getUserPodcastCompletion(
-        userId,
-        levelId
-      );
+      const completions =
+        await podcastsService.getUserPodcastCompletions(userId);
 
       res.json({
         success: true,
-        data: completion,
+        data: completions,
       });
     } catch (error) {
+      console.error('Get user completions error:', error);
       res.status(500).json({
         success: false,
-        message:
-          error instanceof Error ? error.message : 'Failed to fetch completion',
+        message: 'Failed to get completions',
       });
     }
   }

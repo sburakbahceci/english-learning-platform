@@ -71,8 +71,6 @@ export class AIService {
         { role: 'user' as const, content: userMessage },
       ];
 
-      console.log('📤 Sending to Groq AI...');
-
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages,
@@ -84,7 +82,6 @@ export class AIService {
         response.choices[0]?.message?.content ||
         'Sorry, I could not generate a response.';
 
-      console.log('📥 Groq response received');
 
       // AI cevabını kaydet
       const assistantMessage = await prisma.aiChatMessage.create({
@@ -136,11 +133,6 @@ Your task:
 
 Start your explanation immediately without any preamble.`;
 
-      console.log('📤 Sending to Groq AI (llama-3.3-70b-versatile)');
-      console.log('Question:', question);
-      console.log('User Answer:', userAnswer);
-      console.log('Correct Answer:', correctAnswer);
-
       const response = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [
@@ -154,11 +146,6 @@ Start your explanation immediately without any preamble.`;
       const explanation =
         response.choices[0]?.message?.content ||
         'Could not generate explanation.';
-
-      console.log(
-        '📥 Groq response received:',
-        explanation.substring(0, 100) + '...'
-      );
 
       return explanation;
     } catch (error) {

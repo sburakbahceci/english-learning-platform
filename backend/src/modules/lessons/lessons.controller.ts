@@ -64,20 +64,11 @@ export class LessonsController {
         });
       }
 
-      console.log('📥 Complete lesson request:', {
-        userId,
-        lessonId,
-        score,
-        timeSpentSeconds,
-      });
-
       const result = await lessonsService.completeLesson( // ← this.lessonsService yerine lessonsService
         userId,
         lessonId,
         { score, timeSpentSeconds }
       );
-
-      console.log('✅ Lesson completed successfully:', result);
 
       return res.json({
         success: true,

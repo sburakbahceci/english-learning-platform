@@ -2,21 +2,42 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { podcastsService } from '../services/podcasts.service';
 import { useAuthStore } from '../store/authStore';
-import type {
-  LevelPodcast,
-  PodcastVocabulary,
-  PodcastExercise,
-} from '../types';
+
+interface Vocabulary {
+  id: string;
+  word: string;
+  definition: string;
+  exampleSentence?: string;
+}
+
+interface Exercise {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation?: string;
+}
+
+interface Podcast {
+  id: string;
+  title: string;
+  description?: string;
+  audioUrl: string;
+  duration?: number;
+  transcript?: string;
+  vocabularies: Vocabulary[];
+  exercises: Exercise[];
+}
 
 interface PodcastPlayerProps {
-  levelId: string;
+  levelCode: string; // ✅ levelId → levelCode
 }
 
 type PodcastPhase = 'loading' | 'video' | 'exercises' | 'complete';
 
-export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
+export default function PodcastPlayer({ levelCode }: PodcastPlayerProps) {
   const user = useAuthStore((state) => state.user);
-  const [podcast, setPodcast] = useState<LevelPodcast | null>(null);
+  const [currentPodcast, setCurrentPodcast] = useState<Podcast | null>(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<PodcastPhase>('loading');
   const [currentExercise, setCurrentExercise] = useState(0);
@@ -25,36 +46,45 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
-    const fetchPodcast = async () => {
+    const fetchPodcasts = async () => {
       try {
-        const { data } = await podcastsService.getLevelPodcast(levelId);
-        setPodcast(data);
-        setPhase('video');
+        const { data } = await podcastsService.getPodcastsByLevel(levelCode);
+
+        if (data && data.length > 0) {
+          setCurrentPodcast(data[0]);
+          setPhase('video');
+        }
       } catch (error) {
-        console.error('Failed to fetch podcast:', error);
+        console.error('Failed to fetch podcasts:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPodcast();
-  }, [levelId]);
+    fetchPodcasts();
+  }, [levelCode]);
+
+  // YouTube video ID'sini çıkar
+  const getYouTubeVideoId = (url: string) => {
+    const match = url.match(/[?&]v=([^&]+)/);
+    return match ? match[1] : null;
+  };
 
   const handleAnswerSelect = (answer: string) => {
-    if (isAnswered || !podcast) return;
+    if (isAnswered || !currentPodcast) return;
     setSelectedAnswer(answer);
     setIsAnswered(true);
 
-    const currentQ = podcast.exercises[currentExercise];
+    const currentQ = currentPodcast.exercises[currentExercise];
     if (answer === currentQ.correctAnswer) {
       setScore((prev) => prev + 1);
     }
   };
 
   const handleNextExercise = () => {
-    if (!podcast) return;
+    if (!currentPodcast) return;
 
-    if (currentExercise < podcast.exercises.length - 1) {
+    if (currentExercise < currentPodcast.exercises.length - 1) {
       setCurrentExercise((prev) => prev + 1);
       setSelectedAnswer(null);
       setIsAnswered(false);
@@ -65,12 +95,13 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
 
   const handleComplete = async () => {
     try {
-      if (!podcast || !user) return;
+      if (!currentPodcast || !user) return;
 
-      await podcastsService.completePodcastExercises(levelId, {
+      await podcastsService.completePodcast(
+        currentPodcast.id,
         score,
-        totalQuestions: podcast.exercises.length,
-      });
+        300 // timeSpent (5 dakika örnek)
+      );
 
       setPhase('complete');
     } catch (error) {
@@ -86,7 +117,7 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
     );
   }
 
-  if (!podcast || !podcast.level.podcastYoutubeId) {
+  if (!currentPodcast) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
         <div className="text-6xl mb-4">🎙️</div>
@@ -101,101 +132,124 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
     );
   }
 
+  const videoId = getYouTubeVideoId(currentPodcast.audioUrl);
+
   // VIDEO PHASE
   if (phase === 'video') {
     return (
       <div className="space-y-6">
+        {/* Podcast Header */}
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6">
           <div className="flex items-start gap-4">
             <div className="text-5xl">🎙️</div>
             <div className="flex-1">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                {podcast.level.podcastTitle}
+                {currentPodcast.title}
               </h3>
-              <p className="text-gray-600 mb-3">
-                {podcast.level.podcastDescription}
-              </p>
+              {currentPodcast.description && (
+                <p className="text-gray-600 mb-3">
+                  {currentPodcast.description}
+                </p>
+              )}
               <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>📊 {podcast.level.code} Level</span>
-                <span>⏱️ {podcast.level.podcastDurationMinutes} minutes</span>
-                <span>📝 {podcast.vocabularies.length} words</span>
+                <span>📊 {levelCode} Level</span>
+                {currentPodcast.duration && (
+                  <span>
+                    ⏱️ {Math.floor(currentPodcast.duration / 60)} minutes
+                  </span>
+                )}
+                <span>📝 {currentPodcast.vocabularies.length} words</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="aspect-video bg-black">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/${podcast.level.podcastYoutubeId}`}
-              title={podcast.level.podcastTitle}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            ></iframe>
+        {/* YouTube Video */}
+        {videoId && (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="aspect-video bg-black">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title={currentPodcast.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <span>📚</span>
-            Key Vocabulary ({podcast.vocabularies.length} words)
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {podcast.vocabularies.map(
-              (vocab: PodcastVocabulary, index: number) => (
-                <motion.div
-                  key={vocab.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="text-lg font-bold text-purple-600">
-                      {vocab.word}
-                    </h4>
-                    {vocab.translation && (
-                      <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {vocab.translation}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {vocab.definition}
-                  </p>
-                  <p className="text-sm italic text-gray-500 mb-2">
-                    &quot;{vocab.example}&quot;
-                  </p>
-
-                  {/* DÜZELTİLEN KISIM: a etiketi ve null kontrolü eklendi */}
-                  {vocab.timestampSeconds !== null &&
-                    vocab.timestampSeconds !== undefined && (
-                      <a
-                        href={`https://www.youtube.com/watch?v=${podcast.level.podcastYoutubeId}&t=${vocab.timestampSeconds}s`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-purple-600 hover:underline flex items-center gap-1"
-                      ></a>
-                    )}
-                </motion.div>
-              )
-            )}
+        {/* Transcript */}
+        {currentPodcast.transcript && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span>📝</span>
+              Transcript
+            </h3>
+            <p className="text-gray-700 leading-relaxed">
+              {currentPodcast.transcript}
+            </p>
           </div>
-        </div>
+        )}
 
-        {podcast.exercises.length > 0 && (
+        {/* Vocabulary */}
+        {currentPodcast.vocabularies &&
+          currentPodcast.vocabularies.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-white rounded-lg shadow p-6"
+            >
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span>📚</span> Key Vocabulary (
+                {currentPodcast.vocabularies.length} words)
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {currentPodcast.vocabularies.map((vocab, index) => (
+                  <motion.div
+                    key={vocab.id || index}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.7 + index * 0.05 }}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-bold text-blue-600">
+                        {vocab.word}
+                      </h3>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-2 font-medium">
+                      {vocab.definition}
+                    </p>
+
+                    {/* Podcast verisinde exampleSentence olarak geçiyor */}
+                    {vocab.exampleSentence && (
+                      <p className="text-sm italic text-gray-400 border-l-2 border-gray-100 pl-3">
+                        &quot;{vocab.exampleSentence}&quot;
+                      </p>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+        {/* Start Exercises Button */}
+        {currentPodcast.exercises.length > 0 && (
           <div className="flex justify-center">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setPhase('exercises')}
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
+              className="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
             >
-              Test Your Knowledge ({podcast.exercises.length} Questions) →
+              Test Your Knowledge ({currentPodcast.exercises.length} Questions)
+              →
             </motion.button>
           </div>
         )}
@@ -204,8 +258,8 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
   }
 
   // EXERCISES PHASE
-  if (phase === 'exercises' && podcast) {
-    const exercise: PodcastExercise = podcast.exercises[currentExercise];
+  if (phase === 'exercises' && currentPodcast) {
+    const exercise = currentPodcast.exercises[currentExercise];
     const isCorrect = selectedAnswer === exercise.correctAnswer;
 
     return (
@@ -217,10 +271,12 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
           exit={{ opacity: 0, x: -20 }}
           className="bg-white rounded-lg shadow p-8"
         >
+          {/* Progress */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-gray-500">
-                Question {currentExercise + 1} / {podcast.exercises.length}
+                Question {currentExercise + 1} /{' '}
+                {currentPodcast.exercises.length}
               </span>
               <span className="text-sm text-gray-500">
                 Score: {score}/{currentExercise + (isAnswered ? 1 : 0)}
@@ -230,18 +286,20 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
               <div
                 className="bg-purple-600 h-2 rounded-full transition-all"
                 style={{
-                  width: `${((currentExercise + 1) / podcast.exercises.length) * 100}%`,
+                  width: `${((currentExercise + 1) / currentPodcast.exercises.length) * 100}%`,
                 }}
               />
             </div>
           </div>
 
+          {/* Question */}
           <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            {exercise.questionText}
+            {exercise.question}
           </h3>
 
+          {/* Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {exercise.options.map((option: string, index: number) => {
+            {exercise.options.map((option, index) => {
               let buttonStyle =
                 'bg-white border-2 border-gray-300 text-gray-800 hover:border-purple-400 hover:bg-purple-50 cursor-pointer';
 
@@ -279,6 +337,7 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
             })}
           </div>
 
+          {/* Feedback */}
           <AnimatePresence>
             {isAnswered && (
               <motion.div
@@ -306,6 +365,7 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
             )}
           </AnimatePresence>
 
+          {/* Next Button */}
           <AnimatePresence>
             {isAnswered && (
               <motion.div
@@ -320,7 +380,7 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
                   onClick={handleNextExercise}
                   className="px-8 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition-colors shadow-lg"
                 >
-                  {currentExercise < podcast.exercises.length - 1
+                  {currentExercise < currentPodcast.exercises.length - 1
                     ? 'Next Question →'
                     : 'See Results 🎉'}
                 </motion.button>
@@ -333,8 +393,10 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
   }
 
   // COMPLETE PHASE
-  if (phase === 'complete' && podcast) {
-    const percentage = Math.round((score / podcast.exercises.length) * 100);
+  if (phase === 'complete' && currentPodcast) {
+    const percentage = Math.round(
+      (score / currentPodcast.exercises.length) * 100
+    );
 
     return (
       <motion.div
@@ -359,13 +421,13 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
           </div>
           <div className="bg-green-50 rounded-lg p-4">
             <p className="text-3xl font-bold text-green-600">
-              {score}/{podcast.exercises.length}
+              {score}/{currentPodcast.exercises.length}
             </p>
             <p className="text-sm text-gray-500">Correct</p>
           </div>
           <div className="bg-blue-50 rounded-lg p-4">
             <p className="text-3xl font-bold text-blue-600">
-              {podcast.vocabularies.length}
+              {currentPodcast.vocabularies.length}
             </p>
             <p className="text-sm text-gray-500">Words</p>
           </div>
@@ -380,7 +442,7 @@ export default function PodcastPlayer({ levelId }: PodcastPlayerProps) {
             setScore(0);
             setIsAnswered(false);
           }}
-          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all"
+          className="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all"
         >
           Watch Podcast Again
         </motion.button>

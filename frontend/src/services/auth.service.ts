@@ -65,4 +65,7 @@ export const authService = {
     });
     return response.data;
   },
+  logout() {
+    localStorage.removeItem('auth_token');
+  },
 };

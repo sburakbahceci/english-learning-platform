@@ -4,7 +4,7 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/api/v1/auth/google';
+    window.location.href = 'http://localhost:3001/api/v1/auth/google';
   };
 
   return (

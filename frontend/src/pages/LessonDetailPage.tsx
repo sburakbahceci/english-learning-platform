@@ -1,9 +1,11 @@
+type LessonRule = string | { title: string; description: string };
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { lessonsService } from '../services/lessons.service';
 import { useAuthStore } from '../store/authStore';
 import { aiService } from '../services/ai.service';
+import HTMLContent from '../components/HTMLContent';
 import type {
   LessonDetail,
   Exercise,
@@ -51,7 +53,6 @@ export default function LessonDetailPage() {
               (c) => c.lessonId === lessonId
             );
             setIsAlreadyCompleted(alreadyCompleted);
-            console.log('🔍 Lesson already completed:', alreadyCompleted);
           } catch (error) {
             console.log('No completions found or error:', error);
           }
@@ -75,7 +76,8 @@ export default function LessonDetailPage() {
       lesson.content.exercises[
         phase === 'retry' ? wrongAnswers[currentExercise] : currentExercise
       ];
-    const isCorrect = answer === currentQ.answer;
+
+    const isCorrect = answer === currentQ.correctAnswer;
 
     // Kaydet attempt
     const attempt: ExerciseAttempt = {
@@ -83,7 +85,7 @@ export default function LessonDetailPage() {
         phase === 'retry' ? wrongAnswers[currentExercise] : currentExercise,
       question: currentQ.question,
       userAnswer: answer,
-      correctAnswer: currentQ.answer,
+      correctAnswer: currentQ.correctAnswer,
       isCorrect,
       attemptNumber: phase === 'retry' ? 2 : 1,
     };
@@ -118,8 +120,10 @@ export default function LessonDetailPage() {
       }
     } else if (phase === 'retry') {
       const actualIndex = wrongAnswers[currentExercise];
+
+      // ✅ correctAnswer kullan
       const isCorrect =
-        selectedAnswer === lesson.content.exercises[actualIndex].answer;
+        selectedAnswer === lesson.content.exercises[actualIndex].correctAnswer;
 
       if (isCorrect) {
         const updatedWrongAnswers = wrongAnswers.filter(
@@ -150,17 +154,9 @@ export default function LessonDetailPage() {
     userAnswer: string | null,
     correctAnswer: string
   ) => {
-    console.log('🤖 AI Explain clicked:', {
-      question,
-      userAnswer,
-      correctAnswer,
-    });
-
     try {
       setLoadingExplanation(true);
       setAiExplanation(null);
-
-      console.log('📤 Sending request to AI...');
 
       const { data } = await aiService.explainAnswer({
         question,
@@ -168,8 +164,6 @@ export default function LessonDetailPage() {
         correctAnswer,
         context: lesson?.title,
       });
-
-      console.log('📥 AI Response:', data);
 
       setAiExplanation(data.explanation);
     } catch (error) {
@@ -323,7 +317,7 @@ export default function LessonDetailPage() {
           <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="text-white-900 hover:text-white"
+              className="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
             >
               ← Back
             </button>
@@ -355,7 +349,7 @@ export default function LessonDetailPage() {
             transition={{ delay: 0.1 }}
             className="bg-white rounded-lg shadow p-6"
           >
-            <h2 className="text-xl font-bold text-gray-900 mb-3">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
               📖 Introduction
             </h2>
             <p className="text-gray-700 leading-relaxed">
@@ -363,63 +357,97 @@ export default function LessonDetailPage() {
             </p>
           </motion.div>
 
-          {/* Rules */}
+          {/* Rules - ✅ HTML RENDERING */}
           {lesson.content.rules && lesson.content.rules.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-blue-50 rounded-lg shadow p-6"
+              className="bg-white rounded-lg shadow p-6"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-3">📋 Rules</h2>
-              <ul className="space-y-2">
-                {lesson.content.rules.map((rule, index) => (
-                  <motion.li
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                📋 Rules
+              </h2>
+              <div className="space-y-4">
+                {lesson.content.rules.map((rule: LessonRule, index: number) => (
+                  <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + index * 0.1 }}
-                    className="flex items-start gap-2"
+                    className="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-lg"
                   >
-                    <span className="text-blue-600 font-bold mt-0.5">
-                      {index + 1}.
-                    </span>
-                    <span className="text-gray-700">{rule}</span>
-                  </motion.li>
+                    {/* Check if rule is object with title and description */}
+                    {typeof rule === 'object' &&
+                    rule.title &&
+                    rule.description ? (
+                      <>
+                        <h3 className="text-lg font-bold text-blue-900 mb-2">
+                          {rule.title}
+                        </h3>
+                        <HTMLContent
+                          content={rule.description}
+                          className="text-gray-800 leading-relaxed"
+                        />
+                      </>
+                    ) : (
+                      /* Old format - simple string */
+                      <div className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold mt-0.5">
+                          {index + 1}.
+                        </span>
+                        <HTMLContent
+                          content={
+                            typeof rule === 'string'
+                              ? rule
+                              : JSON.stringify(rule)
+                          }
+                          className="text-gray-800 flex-1"
+                        />
+                      </div>
+                    )}
+                  </motion.div>
                 ))}
-              </ul>
+              </div>
             </motion.div>
           )}
 
-          {/* Examples */}
+          {/* Examples - ✅ HTML RENDERING */}
           {lesson.content.examples && lesson.content.examples.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-green-50 rounded-lg shadow p-6"
+              className="bg-white rounded-lg shadow p-6"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-3">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 💡 Examples
               </h2>
-              <ul className="space-y-2">
-                {lesson.content.examples.map((example, index) => (
-                  <motion.li
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + index * 0.05 }}
-                    className="flex items-start gap-2 text-gray-700"
-                  >
-                    <span className="text-green-600">→</span>
-                    <span className="italic">&quot;{example}&quot;</span>
-                  </motion.li>
-                ))}
-              </ul>
+              <div className="bg-gray-50 rounded-lg p-6">
+                <ul className="space-y-3">
+                  {lesson.content.examples.map(
+                    (example: string, index: number) => (
+                      <motion.li
+                        key={index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + index * 0.05 }}
+                        className="flex items-start gap-3"
+                      >
+                        <span className="text-green-600 text-xl mt-0.5">✓</span>
+                        <HTMLContent
+                          content={example}
+                          className="text-gray-800 flex-1 leading-relaxed"
+                        />
+                      </motion.li>
+                    )
+                  )}
+                </ul>
+              </div>
             </motion.div>
           )}
 
-          {/* Vocabulary */}
+          {/* Vocabulary - Aynı kalıyor */}
           {lesson.content.words && lesson.content.words.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -427,7 +455,7 @@ export default function LessonDetailPage() {
               transition={{ delay: 0.6 }}
               className="bg-white rounded-lg shadow p-6"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 📚 Vocabulary
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -452,7 +480,7 @@ export default function LessonDetailPage() {
                     <p className="text-sm text-gray-600 mb-2">
                       {word.definition}
                     </p>
-                    <p className="text-sm italic text-gray-500">
+                    <p className="text-sm text-gray-700">
                       &quot;{word.example}&quot;
                     </p>
                   </motion.div>
@@ -486,7 +514,7 @@ export default function LessonDetailPage() {
   if (phase === 'retry') {
     const wrongQuestionIndex = wrongAnswers[currentExercise];
     const exercise: Exercise = lesson.content.exercises[wrongQuestionIndex];
-    const isCorrect = selectedAnswer === exercise.answer;
+    const isCorrect = selectedAnswer === exercise.correctAnswer;
 
     return (
       <div className="min-h-screen bg-gray-100">
@@ -529,12 +557,12 @@ export default function LessonDetailPage() {
                     'bg-white border-2 border-gray-300 text-gray-800 hover:border-orange-400 hover:bg-orange-50 cursor-pointer';
 
                   if (isAnswered) {
-                    if (option === exercise.answer) {
+                    if (option === exercise.correctAnswer) {
                       buttonStyle =
                         'bg-green-50 border-2 border-green-500 text-green-700';
                     } else if (
                       option === selectedAnswer &&
-                      option !== exercise.answer
+                      option !== exercise.correctAnswer
                     ) {
                       buttonStyle =
                         'bg-red-50 border-2 border-red-500 text-red-700';
@@ -561,6 +589,7 @@ export default function LessonDetailPage() {
               </div>
             )}
 
+            {/* Feedback - ✅ HTML RENDERING */}
             {isAnswered && (
               <div
                 className={`rounded-xl p-6 mb-6 border-2 ${
@@ -581,27 +610,34 @@ export default function LessonDetailPage() {
                           <strong>Your answer:</strong> {selectedAnswer}
                         </p>
                         <p className="text-sm mb-2">
-                          <strong>Correct answer:</strong> {exercise.answer}
+                          <strong>Correct answer:</strong>{' '}
+                          {exercise.correctAnswer}
                         </p>
                       </>
                     )}
                     {exercise.explanation && (
-                      <p className="text-sm italic mt-2">
-                        💡 {exercise.explanation}
-                      </p>
+                      <div className="mt-3 pt-3 border-t border-current border-opacity-20">
+                        <p className="text-sm font-semibold mb-1">
+                          💡 Explanation:
+                        </p>
+                        <HTMLContent
+                          content={exercise.explanation}
+                          className="text-sm"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* AI Explain Button - Sadece yanlış cevaplarda */}
+                {/* AI Explain Button - aynı kalıyor */}
                 {!isCorrect && (
                   <div className="mt-4 border-t border-red-200 pt-4">
                     <button
                       onClick={() =>
                         handleExplainWithAI(
                           exercise.question,
-                          selectedAnswer,
-                          exercise.answer
+                          selectedAnswer || '', // selectedAnswer undefined ise "" gönder
+                          exercise.correctAnswer || exercise.correctAnswer || '' // Yeni veya eski cevap alanından birini seç, yoksa "" gönder
                         )
                       }
                       disabled={loadingExplanation}
@@ -620,7 +656,6 @@ export default function LessonDetailPage() {
                       )}
                     </button>
 
-                    {/* AI Explanation */}
                     {aiExplanation && (
                       <div className="mt-4 p-5 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl shadow-sm">
                         <div className="flex items-start gap-3">
@@ -644,6 +679,7 @@ export default function LessonDetailPage() {
               </div>
             )}
 
+            {/* Next button - aynı kalıyor */}
             {isAnswered && (
               <div className="flex justify-center">
                 <button
@@ -665,7 +701,7 @@ export default function LessonDetailPage() {
   // EXERCISE PHASE
   if (phase === 'exercise') {
     const exercise: Exercise = lesson.content.exercises[currentExercise];
-    const isCorrect = selectedAnswer === exercise.answer;
+    const isCorrect = selectedAnswer === exercise.correctAnswer;
 
     return (
       <div className="min-h-screen bg-gray-100">
@@ -679,7 +715,6 @@ export default function LessonDetailPage() {
                 {currentExercise + 1} / {lesson.content.exercises.length}
               </span>
             </div>
-            {/* Progress Bar - Sadece genişlik geçişi için standart CSS transition bırakıldı */}
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 style={{
@@ -712,12 +747,12 @@ export default function LessonDetailPage() {
                     'bg-white border-2 border-gray-300 text-gray-800 hover:border-blue-400 hover:bg-blue-50 cursor-pointer';
 
                   if (isAnswered) {
-                    if (option === exercise.answer) {
+                    if (option === exercise.correctAnswer) {
                       buttonStyle =
                         'bg-green-50 border-2 border-green-500 text-green-700';
                     } else if (
                       option === selectedAnswer &&
-                      option !== exercise.answer
+                      option !== exercise.correctAnswer
                     ) {
                       buttonStyle =
                         'bg-red-50 border-2 border-red-500 text-red-700';
@@ -744,27 +779,40 @@ export default function LessonDetailPage() {
               </div>
             )}
 
-            {/* Yanıt geri bildirimi - Efektsiz */}
             {isAnswered && (
               <div
-                className={`p-4 rounded-lg mb-6 text-center ${
+                className={`p-6 rounded-xl mb-6 border-2 ${
                   isCorrect
-                    ? 'bg-green-50 text-green-700'
-                    : 'bg-red-50 text-red-700'
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-red-50 border-red-200'
                 }`}
               >
-                <p className="text-xl font-bold mb-1">
+                <p
+                  className={`text-xl font-bold mb-2 ${
+                    isCorrect ? 'text-green-700' : 'text-red-700'
+                  }`}
+                >
                   {isCorrect ? '🎉 Correct!' : '❌ Wrong!'}
                 </p>
                 {!isCorrect && (
-                  <p>
-                    Correct answer: <strong>{exercise.answer}</strong>
+                  <p className="text-gray-700 mb-2">
+                    Correct answer: <strong>{exercise.correctAnswer}</strong>
                   </p>
+                )}
+                {exercise.explanation && (
+                  <div className="mt-3 pt-3 border-t border-gray-300">
+                    <p className="text-sm font-semibold text-gray-600 mb-1">
+                      💡 Explanation:
+                    </p>
+                    <HTMLContent
+                      content={exercise.explanation}
+                      className="text-sm text-gray-700"
+                    />
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Sonraki soru butonu - Efektsiz */}
             {isAnswered && (
               <div className="flex justify-center">
                 <button

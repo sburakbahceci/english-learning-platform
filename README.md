@@ -163,7 +163,7 @@ JWT_SECRET="lingoria-super-secret-key-2026"
 # Google OAuth 2.0
 GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="GOCSPX-your-client-secret"
-GOOGLE_REDIRECT_URI="http://localhost:3000/api/v1/auth/google/callback"
+GOOGLE_REDIRECT_URI="http://localhost:3001/api/v1/auth/google/callback"
 
 # Frontend URL (for CORS)
 FRONTEND_URL="http://localhost:5173"

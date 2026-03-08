@@ -3,10 +3,10 @@ export interface Level {
   code: string;
   name: string;
   description: string;
-  orderIndex: number;
-  requiredXp: number;
-  badgeIconUrl: string | null;
-  createdAt?: string;
+  order: number;
+  colorCode: string;
+  isUnlockedByDefault?: boolean;
+  unlockOrder?: number;
 }
 
 export interface User {
@@ -18,6 +18,9 @@ export interface User {
   currentStreak: number;
   longestStreak: number;
   lastActivityDate?: string;
+  startingLevel: string;
+  placementTestCompleted: boolean;
+  placementTestDate?: string;
   createdAt?: string;
 }
 
@@ -83,8 +86,8 @@ export interface VocabularyWord {
 
 export interface Exercise {
   question: string;
-  answer: string;
-  options?: string[];
+  options: string[];
+  correctAnswer: string;
   explanation?: string;
 }
 

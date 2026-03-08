@@ -4,15 +4,16 @@ export class LevelsService {
   async getAllLevels() {
     try {
       const levels = await prisma.level.findMany({
-        orderBy: { orderIndex: 'asc' },
+        orderBy: { order: 'asc' },
         select: {
           id: true,
           code: true,
           name: true,
           description: true,
-          orderIndex: true,
-          requiredXp: true,
-          badgeIconUrl: true,
+          order: true,
+          colorCode: true,
+          isUnlockedByDefault: true,
+          unlockOrder: true,
         },
       });
 

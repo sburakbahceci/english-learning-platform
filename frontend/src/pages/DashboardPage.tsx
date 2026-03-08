@@ -2,33 +2,99 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { levelsService } from '../services/levels.service';
+import { placementTestService } from '../services/placement-test.service';
 import { authService } from '../services/auth.service';
 import type { Level } from '../types';
+
+interface LevelWithProgress extends Level {
+  isLocked: boolean;
+  progress?: number;
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const [levels, setLevels] = useState<Level[]>([]); // ← DEĞİŞTİ
+  const [levels, setLevels] = useState<LevelWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userStartingLevel, setUserStartingLevel] = useState<string>('');
 
   useEffect(() => {
-    const fetchLevels = async () => {
-      try {
-        const { data } = await levelsService.getAllLevels();
-        setLevels(data);
-      } catch (error) {
-        console.error('Failed to fetch levels:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLevels();
+    checkPlacementTestAndFetchLevels();
   }, []);
+
+  const checkPlacementTestAndFetchLevels = async () => {
+    try {
+      // Placement test yapılmış mı kontrol et
+      const { data: statusData } = await placementTestService.getStatus();
+
+      if (!statusData.completed) {
+        navigate('/placement-test');
+        return;
+      }
+
+      // User bilgisini al
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // ✅ authService kullan (zaten var)
+      const userData = await authService.getCurrentUser(token);
+      const startingLevel = userData.data?.startingLevel || 'A1';
+
+      setUserStartingLevel(startingLevel);
+
+      // Seviyeleri getir
+      const { data: levelsData } = await levelsService.getAllLevels();
+      const sortedLevels = levelsData.sort((a, b) => a.order - b.order);
+
+      // Starting level'ın index'ini bul
+      const startingLevelIndex = sortedLevels.findIndex(
+        (l) => l.code === startingLevel
+      );
+
+      if (startingLevelIndex === -1) {
+        console.error('❌ Starting level not found:', startingLevel);
+        // Fallback: A1'i unlock et
+        const levelsWithLock = sortedLevels.map((level) => ({
+          ...level,
+          isLocked: level.code !== 'A1',
+        }));
+        setLevels(levelsWithLock);
+        return;
+      }
+
+      // Lock/Unlock belirle
+      const levelsWithLock = sortedLevels.map((level, index) => {
+        const isLocked = index > startingLevelIndex;
+        return {
+          ...level,
+          isLocked,
+        };
+      });
+
+      setLevels(levelsWithLock);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
-    authService.logout();
+    navigate('/');
+  };
+
+  const handleLevelClick = (level: LevelWithProgress) => {
+    if (level.isLocked) {
+      alert(
+        `This level is locked! Complete ${levels[levels.findIndex((l) => l.code === level.code) - 1]?.code || 'previous'} level to unlock.`
+      );
+      return;
+    }
+    navigate(`/levels/${level.code}`);
   };
 
   if (!user) {
@@ -41,8 +107,8 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          {/* Logo - 801x312 oranında, yükseklik 40px */}
-          <div className="flex items-center">
+          {/* Logo */}
+          <div className="flex items-center gap-6">
             <img
               src="/lingoria_text_logo.png"
               alt="Lingoria"
@@ -54,7 +120,7 @@ export default function DashboardPage() {
               className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
             >
               <span>🤖</span>
-              <span className="font-medium">Lingoria AI Assistant</span>
+              <span className="font-medium">AI Assistant</span>
             </button>
           </div>
 
@@ -62,7 +128,17 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-500">XP: {user.totalXp}</p>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>XP: {user.totalXp}</span>
+                {userStartingLevel && (
+                  <>
+                    <span>•</span>
+                    <span className="font-semibold text-blue-600">
+                      Level: {userStartingLevel}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
             {user.avatarUrl && (
               <img
@@ -73,7 +149,7 @@ export default function DashboardPage() {
             )}
             <button
               onClick={handleLogout}
-              className="text-sm text-red-600 hover:text-red-700 font-medium"
+              className="px-4 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
             >
               Logout
             </button>
@@ -83,12 +159,16 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Choose Your Level
-        </h2>
-        <p className="text-gray-600 mb-8">
-          Start your English learning journey with Lingoria
-        </p>
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Your Learning Path
+          </h2>
+          <p className="text-gray-600">
+            {userStartingLevel
+              ? `Starting from ${userStartingLevel} level. Complete lessons to unlock higher levels!`
+              : 'Choose a level to start learning'}
+          </p>
+        </div>
 
         {loading ? (
           <div className="text-center py-12">
@@ -99,32 +179,63 @@ export default function DashboardPage() {
             {levels.map((level) => (
               <div
                 key={level.id}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                className={`bg-white rounded-lg shadow-md p-6 transition-all ${
+                  level.isLocked
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:shadow-lg cursor-pointer'
+                }`}
+                onClick={() => handleLevelClick(level)}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-2xl font-bold text-blue-600">
+                  <h3
+                    className={`text-2xl font-bold ${
+                      level.isLocked ? 'text-gray-400' : 'text-blue-600'
+                    }`}
+                  >
                     {level.code}
                   </h3>
-                  <span className="text-sm text-gray-500">
-                    {level.requiredXp} XP
-                  </span>
+                  {!level.isLocked && (
+                    <span className="text-sm px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
+                      ✓ Unlocked
+                    </span>
+                  )}
                 </div>
-                <h4 className="text-xl font-semibold text-gray-900 mb-2">
+
+                <h4
+                  className={`text-xl font-semibold mb-2 ${
+                    level.isLocked ? 'text-gray-400' : 'text-gray-900'
+                  }`}
+                >
                   {level.name}
                 </h4>
-                <p className="text-gray-600 text-sm mb-4">
+
+                <p
+                  className={`text-sm mb-4 ${
+                    level.isLocked ? 'text-gray-400' : 'text-gray-600'
+                  }`}
+                >
                   {level.description}
                 </p>
+
                 <button
-                  onClick={() => navigate(`/levels/${level.code}`)}
-                  className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLevelClick(level);
+                  }}
+                  disabled={level.isLocked}
+                  className={`w-full py-2 rounded-lg font-semibold transition-colors ${
+                    level.isLocked
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
-                  Start Learning
+                  {level.isLocked ? 'Locked 🔒' : 'Start Learning →'}
                 </button>
               </div>
             ))}
           </div>
         )}
+
         {/* AI Assistant Card */}
         <div className="mt-8">
           <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 rounded-2xl shadow-lg p-8 text-white">

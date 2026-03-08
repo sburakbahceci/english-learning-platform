@@ -14,6 +14,9 @@ export class UsersService {
           currentStreak: true,
           longestStreak: true,
           lastActivityDate: true,
+          startingLevel: true,
+          placementTestCompleted: true,
+          placementTestDate: true,
           createdAt: true,
         },
       });

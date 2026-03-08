@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { levelsService } from '../services/levels.service';
 import { lessonsService } from '../services/lessons.service';
+import { readingService } from '../services/reading.service';
+import { writingService } from '../services/writing.service';
 import { useAuthStore } from '../store/authStore';
 import PodcastPlayer from '../components/PodcastPlayer';
 import type { Level, Lesson, LessonCompletion } from '../types';
@@ -15,7 +17,24 @@ interface LessonStats {
   stillWrong?: number;
 }
 
-type TabType = 'lessons' | 'reports' | 'podcast';
+interface ReadingPassage {
+  id: string;
+  title: string;
+  topic?: string;
+  word_count: number;
+  estimated_time: number;
+}
+
+interface WritingPrompt {
+  id: string;
+  title: string;
+  prompt_type: string;
+  min_words?: number;
+  max_words?: number;
+  estimated_time?: number;
+}
+
+type TabType = 'lessons' | 'reading' | 'writing' | 'podcast' | 'reports';
 
 export default function LevelDetailPage() {
   const { code } = useParams<{ code: string }>();
@@ -25,6 +44,8 @@ export default function LevelDetailPage() {
   const [level, setLevel] = useState<Level | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [completions, setCompletions] = useState<LessonCompletion[]>([]);
+  const [readingPassages, setReadingPassages] = useState<ReadingPassage[]>([]);
+  const [writingPrompts, setWritingPrompts] = useState<WritingPrompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('lessons');
 
@@ -49,6 +70,26 @@ export default function LevelDetailPage() {
           } catch {
             console.log('No completions yet');
           }
+        }
+
+        // Reading passages
+        try {
+          const { data: readingData } =
+            await readingService.getPassagesByLevel(code);
+          setReadingPassages(readingData || []);
+        } catch (error) {
+          console.error('Failed to fetch reading passages:', error);
+          setReadingPassages([]);
+        }
+
+        // Writing prompts
+        try {
+          const { data: writingData } =
+            await writingService.getPromptsByLevel(code);
+          setWritingPrompts(writingData || []);
+        } catch (error) {
+          console.error('Failed to fetch writing prompts:', error);
+          setWritingPrompts([]);
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -90,11 +131,9 @@ export default function LevelDetailPage() {
       const splitTitle = doc.splitTextToSize(congratsMessage, pageWidth - 40);
       doc.text(splitTitle, 20, 53);
 
-      // Ayırıcı Çizgi
       doc.setDrawColor(230, 230, 230);
       doc.line(20, 72, pageWidth - 20, 72);
 
-      // Ders Bilgileri
       doc.setFontSize(12);
       doc.text(`Level: ${level?.code} - ${level?.name}`, 20, 82);
       doc.text(`Lesson: ${lessonTitle}`, 20, 90);
@@ -104,7 +143,6 @@ export default function LevelDetailPage() {
         98
       );
 
-      // Performans Bilgileri (Eğer stats varsa)
       if (stats) {
         doc.setFillColor(248, 250, 252);
         doc.roundedRect(20, 110, pageWidth - 40, 40, 3, 3, 'F');
@@ -124,7 +162,6 @@ export default function LevelDetailPage() {
         );
       }
 
-      // Footer
       doc.setFontSize(8);
       doc.setTextColor(160);
       doc.text(
@@ -176,9 +213,9 @@ export default function LevelDetailPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
             >
-              <span className="text-xl">←</span>
+              <span className="text-xl">← Back to Levels</span>
             </button>
             <img
               src="/lingoria_text_logo.png"
@@ -228,10 +265,10 @@ export default function LevelDetailPage() {
         </div>
 
         {/* Tab Selection */}
-        <div className="flex gap-2 mb-8 bg-gray-200/50 p-1 rounded-xl w-fit">
+        <div className="flex gap-2 mb-8 bg-gray-200/50 p-1 rounded-xl w-fit overflow-x-auto">
           <button
             onClick={() => setActiveTab('lessons')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all ${
+            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
               activeTab === 'lessons'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -240,24 +277,44 @@ export default function LevelDetailPage() {
             📚 Lessons
           </button>
           <button
+            onClick={() => setActiveTab('reading')}
+            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
+              activeTab === 'reading'
+                ? 'bg-white text-green-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            📖 Reading
+          </button>
+          <button
+            onClick={() => setActiveTab('writing')}
+            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
+              activeTab === 'writing'
+                ? 'bg-white text-purple-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            ✍️ Writing
+          </button>
+          <button
             onClick={() => setActiveTab('podcast')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all ${
+            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
               activeTab === 'podcast'
                 ? 'bg-white text-purple-600 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            🎙️ Podcast
+            🎙️ Listening
           </button>
           <button
             onClick={() => setActiveTab('reports')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all ${
+            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
               activeTab === 'reports'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            📊 My Reports
+            📊 Reports
           </button>
         </div>
 
@@ -342,6 +399,137 @@ export default function LevelDetailPage() {
             </motion.div>
           )}
 
+          {/* READING TAB */}
+          {activeTab === 'reading' && (
+            <motion.div
+              key="reading"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {readingPassages.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                  <span className="text-6xl mb-4 block">📚</span>
+                  <p className="text-gray-400 font-medium">
+                    No reading passages available for this level yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {readingPassages.map((passage) => (
+                    <motion.div
+                      key={passage.id}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => navigate(`/reading/${passage.id}`)}
+                      className="bg-white rounded-2xl shadow-sm p-6 cursor-pointer border-2 border-transparent hover:border-green-100 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                          {passage.topic || 'Reading'}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          ⏱️ ~{passage.estimated_time} min
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {passage.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        {passage.word_count} words
+                      </p>
+                      <button className="w-full py-2.5 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors">
+                        Start Reading →
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* WRITING TAB */}
+          {activeTab === 'writing' && (
+            <motion.div
+              key="writing"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {/* Fill-in-blank Exercises */}
+              <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <span>✍️</span>
+                  Grammar & Vocabulary Exercises
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Practice grammar and vocabulary with fill-in-the-blank
+                  exercises.
+                </p>
+                <button
+                  onClick={() => navigate(`/writing/exercises/${code}`)}
+                  className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  Start Exercises →
+                </button>
+              </div>
+
+              {/* Writing Prompts */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span>📝</span>
+                  Writing Prompts
+                </h3>
+                {writingPrompts.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                    <span className="text-5xl mb-3 block">✍️</span>
+                    <p className="text-gray-400 font-medium">
+                      No writing prompts available for this level yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {writingPrompts.map((prompt) => (
+                      <motion.div
+                        key={prompt.id}
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => navigate(`/writing/prompt/${prompt.id}`)}
+                        className="bg-white rounded-2xl shadow-sm p-6 cursor-pointer border-2 border-transparent hover:border-purple-100 transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+                            {prompt.prompt_type}
+                          </span>
+                          {prompt.estimated_time && (
+                            <span className="text-sm text-gray-500">
+                              ⏱️ ~{prompt.estimated_time} min
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          {prompt.title}
+                        </h3>
+                        {(prompt.min_words || prompt.max_words) && (
+                          <p className="text-sm text-gray-600 mb-4">
+                            {prompt.min_words && prompt.max_words
+                              ? `${prompt.min_words}-${prompt.max_words} words`
+                              : prompt.min_words
+                                ? `Min: ${prompt.min_words} words`
+                                : `Max: ${prompt.max_words} words`}
+                          </p>
+                        )}
+                        <button className="w-full py-2.5 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors">
+                          Start Writing →
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {/* PODCAST TAB */}
           {activeTab === 'podcast' && (
             <motion.div
@@ -350,7 +538,7 @@ export default function LevelDetailPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <PodcastPlayer levelId={level.id} />
+              <PodcastPlayer levelCode={level?.code} />
             </motion.div>
           )}
 
@@ -365,6 +553,7 @@ export default function LevelDetailPage() {
             >
               {completions.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                  <span className="text-6xl mb-4 block">📊</span>
                   <p className="text-gray-400 font-medium">
                     No reports available. Complete a lesson to see it here!
                   </p>
@@ -399,9 +588,9 @@ export default function LevelDetailPage() {
                             accuracy: comp.score ?? 0,
                           });
                         }}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all font-medium"
                       >
-                        Download Report 📥
+                        Download 📥
                       </button>
                     </div>
                   );

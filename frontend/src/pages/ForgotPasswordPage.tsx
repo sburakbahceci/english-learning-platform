@@ -123,7 +123,7 @@ export default function ForgotPasswordPage() {
         <div className="mt-6 text-center">
           <Link
             to="/login"
-            className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-1"
+            className="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
           >
             <span>←</span> Back to Sign In
           </Link>
