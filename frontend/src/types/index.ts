@@ -267,3 +267,60 @@ export interface AiChatSession {
   lastMessageAt: string;
   messages?: AiChatMessage[];
 }
+
+// ========================================
+// SPEAKING TYPES
+// ========================================
+
+export interface SpeakingTask {
+  id: string;
+  level_id: string;
+  title: string;
+  description?: string;
+  task_type: 'describe_image' | 'answer_question' | 'free_speech' | 'role_play';
+  prompt_text: string;
+  image_url?: string;
+  duration_seconds: number;
+  difficulty: number;
+  sample_answer?: string;
+  evaluation_criteria?: {
+    pronunciation: boolean;
+    fluency: boolean;
+    vocabulary: boolean;
+    grammar: boolean;
+  };
+  created_at?: string;
+  updated_at?: string;
+  levels?: {
+    id: string;
+    code: string;
+    name: string;
+  };
+}
+
+export interface SpeakingAttempt {
+  id: string;
+  user_id: string;
+  task_id: string;
+  audio_url?: string;
+  transcription?: string;
+  ai_feedback?: {
+    pronunciation_score: number;
+    fluency_score: number;
+    grammar_score: number;
+    vocabulary_score: number;
+    overall_score: number;
+    feedback_text: string;
+    strengths: string[];
+    improvements: string[];
+  };
+  duration_seconds?: number;
+  attempted_at: string;
+  speaking_tasks?: SpeakingTask;
+}
+
+export interface SpeakingProgress {
+  total_tasks: number;
+  completed_tasks: number;
+  attempts: SpeakingAttempt[];
+}

@@ -18,6 +18,7 @@ import ReadingResultsPage from './pages/ReadingResultsPage';
 import WritingExercisesPage from './pages/WritingExercisesPage';
 import WritingPromptPage from './pages/WritingPromptPage';
 import WritingFeedbackPage from './pages/WritingFeedbackPage';
+import SpeakingTaskPage from './pages/SpeakingTaskPage';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/lessons/:lessonId" element={<LessonDetailPage />} />
         <Route path="/exam/:levelId" element={<ExamPage />} />
         <Route path="/ai-chat" element={<AiChatPage />} />
+
         {/* Auth Routes */}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -36,16 +38,22 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+        {/* Placement Test */}
         <Route path="/placement-test" element={<PlacementTestPage />} />
         <Route
           path="/placement-test/results"
           element={<PlacementTestResultsPage />}
         />
+
+        {/* Reading Routes */}
         <Route path="/reading/:passageId" element={<ReadingPassagePage />} />
         <Route
           path="/reading/results/:passageId"
           element={<ReadingResultsPage />}
         />
+
+        {/* Writing Routes */}
         <Route
           path="/writing/exercises/:levelCode"
           element={<WritingExercisesPage />}
@@ -58,6 +66,9 @@ function App() {
           path="/writing/feedback/:submissionId"
           element={<WritingFeedbackPage />}
         />
+
+        {/* Speaking Routes */}
+        <Route path="/speaking/:taskId" element={<SpeakingTaskPage />} />
       </Routes>
     </BrowserRouter>
   );

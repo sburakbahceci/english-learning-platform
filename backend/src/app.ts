@@ -13,6 +13,7 @@ import aiRoutes from './modules/ai/ai.routes';
 import placementTestRoutes from './modules/placement-test/placement-test.routes';
 import readingRoutes from './modules/reading/reading.routes';
 import writingRoutes from './modules/writing/writing.routes';
+import speakingRoutes from './modules/speaking/speaking.routes';
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/placement-test', placementTestRoutes);
 app.use('/api/v1/reading', readingRoutes);
 app.use('/api/v1/writing', writingRoutes);
+app.use('/api/v1/speaking', speakingRoutes);
 
 // 404 Handler
 app.use((_req: Request, res: Response) => {

@@ -385,32 +385,40 @@ model reading_questions {
 }
 
 model speaking_attempts {
-  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id        String
-  task_id        String         @db.Uuid
-  audio_url      String?
-  transcription  String?
-  ai_feedback    Json?
-  overall_score  Int?
-  duration       Int?
-  submitted_at   DateTime?      @default(now()) @db.Timestamp(6)
-  speaking_tasks speaking_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users          User           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String
+  task_id           String         @db.Uuid
+  audio_url         String?
+  transcription     String?
+  ai_feedback       Json?
+  duration_seconds  Int?
+  attempted_at      DateTime?      @default(now()) @db.Timestamp(6)
+  
+  users             User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  speaking_tasks    speaking_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
 
-  @@index([task_id], map: "idx_speaking_attempts_task")
+  @@unique([user_id, task_id])
   @@index([user_id], map: "idx_speaking_attempts_user")
+  @@index([task_id], map: "idx_speaking_attempts_task")
 }
 
 model speaking_tasks {
-  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  level_id          String
-  title             String              @db.VarChar(255)
-  prompt_text       String
-  task_type         String?             @db.VarChar(50)
-  estimated_time    Int?
-  created_at        DateTime?           @default(now()) @db.Timestamp(6)
-  speaking_attempts speaking_attempts[]
-  levels            Level               @relation(fields: [level_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  level_id             String
+  title                String              @db.VarChar(255)
+  description          String?
+  task_type            String              @db.VarChar(50) // 'describe_image', 'answer_question', 'free_speech', 'role_play'
+  prompt_text          String
+  image_url            String?
+  duration_seconds     Int?                @default(60)
+  difficulty           Int?                @default(1)
+  sample_answer        String?
+  evaluation_criteria  Json?
+  created_at           DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?           @default(now()) @db.Timestamp(6)
+  
+  levels               Level              @relation(fields: [level_id], references: [id], onDelete: Cascade)
+  attempts             speaking_attempts[]
 
   @@index([level_id], map: "idx_speaking_tasks_level")
 }

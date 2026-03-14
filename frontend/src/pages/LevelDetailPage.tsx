@@ -5,6 +5,7 @@ import { levelsService } from '../services/levels.service';
 import { lessonsService } from '../services/lessons.service';
 import { readingService } from '../services/reading.service';
 import { writingService } from '../services/writing.service';
+import { speakingService } from '../services/speaking.service';
 import { useAuthStore } from '../store/authStore';
 import PodcastPlayer from '../components/PodcastPlayer';
 import type { Level, Lesson, LessonCompletion } from '../types';
@@ -34,7 +35,21 @@ interface WritingPrompt {
   estimated_time?: number;
 }
 
-type TabType = 'lessons' | 'reading' | 'writing' | 'podcast' | 'reports';
+interface SpeakingTask {
+  id: string;
+  title: string;
+  description?: string;
+  task_type: string;
+  duration_seconds: number;
+}
+
+type TabType =
+  | 'lessons'
+  | 'reading'
+  | 'writing'
+  | 'speaking'
+  | 'podcast'
+  | 'reports';
 
 export default function LevelDetailPage() {
   const { code } = useParams<{ code: string }>();
@@ -46,8 +61,9 @@ export default function LevelDetailPage() {
   const [completions, setCompletions] = useState<LessonCompletion[]>([]);
   const [readingPassages, setReadingPassages] = useState<ReadingPassage[]>([]);
   const [writingPrompts, setWritingPrompts] = useState<WritingPrompt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [speakingTasks, setSpeakingTasks] = useState<SpeakingTask[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('lessons');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,6 +106,16 @@ export default function LevelDetailPage() {
         } catch (error) {
           console.error('Failed to fetch writing prompts:', error);
           setWritingPrompts([]);
+        }
+
+        // ✅ Speaking tasks
+        try {
+          const { data: speakingData } =
+            await speakingService.getTasksByLevel(code);
+          setSpeakingTasks(speakingData || []);
+        } catch (error) {
+          console.error('Failed to fetch speaking tasks:', error);
+          setSpeakingTasks([]);
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -296,6 +322,17 @@ export default function LevelDetailPage() {
           >
             ✍️ Writing
           </button>
+          {/* ✅ YENİ - Speaking Tab */}
+          <button
+            onClick={() => setActiveTab('speaking')}
+            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
+              activeTab === 'speaking'
+                ? 'bg-white text-red-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            🎤 Speaking
+          </button>
           <button
             onClick={() => setActiveTab('podcast')}
             className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
@@ -304,7 +341,7 @@ export default function LevelDetailPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            🎙️ Listening
+            🎙️ Podcast
           </button>
           <button
             onClick={() => setActiveTab('reports')}
@@ -595,6 +632,96 @@ export default function LevelDetailPage() {
                     </div>
                   );
                 })
+              )}
+            </motion.div>
+          )}
+
+          {/* SPEAKING TAB */}
+          {activeTab === 'speaking' && (
+            <motion.div
+              key="speaking"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              {speakingTasks.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                  <span className="text-6xl mb-4 block">🎤</span>
+                  <p className="text-gray-400 font-medium">
+                    No speaking tasks available for this level yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {speakingTasks.map((task) => {
+                    // Task type icons
+                    const getTaskIcon = (type: string) => {
+                      switch (type) {
+                        case 'describe_image':
+                          return '🖼️';
+                        case 'answer_question':
+                          return '❓';
+                        case 'free_speech':
+                          return '💬';
+                        case 'role_play':
+                          return '🎭';
+                        default:
+                          return '🎤';
+                      }
+                    };
+
+                    // Task type labels
+                    const getTaskLabel = (type: string) => {
+                      switch (type) {
+                        case 'describe_image':
+                          return 'Describe Image';
+                        case 'answer_question':
+                          return 'Answer Question';
+                        case 'free_speech':
+                          return 'Free Speech';
+                        case 'role_play':
+                          return 'Role Play';
+                        default:
+                          return 'Speaking';
+                      }
+                    };
+
+                    return (
+                      <motion.div
+                        key={task.id}
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => navigate(`/speaking/${task.id}`)}
+                        className="bg-white rounded-2xl shadow-sm p-6 cursor-pointer border-2 border-transparent hover:border-red-100 transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">
+                              {getTaskIcon(task.task_type)}
+                            </span>
+                            <span className="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                              {getTaskLabel(task.task_type)}
+                            </span>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            ⏱️ {task.duration_seconds}s
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          {task.title}
+                        </h3>
+                        {task.description && (
+                          <p className="text-sm text-gray-600 mb-4">
+                            {task.description}
+                          </p>
+                        )}
+                        <button className="w-full py-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold rounded-xl hover:from-red-600 hover:to-pink-600 transition-all shadow-md">
+                          Start Speaking →
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               )}
             </motion.div>
           )}
