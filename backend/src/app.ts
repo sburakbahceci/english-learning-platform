@@ -14,6 +14,8 @@ import placementTestRoutes from './modules/placement-test/placement-test.routes'
 import readingRoutes from './modules/reading/reading.routes';
 import writingRoutes from './modules/writing/writing.routes';
 import speakingRoutes from './modules/speaking/speaking.routes';
+import adminAuthRoutes from './modules/admin/auth/admin-auth.routes';
+import adminDashboardRoutes from './modules/admin/dashboard/admin-dashboard.routes';
 
 dotenv.config();
 
@@ -54,7 +56,7 @@ app.get('/api/v1', (_req: Request, res: Response) => {
       exams: '/api/v1/exams',
       podcasts: '/api/v1/podcasts',
       ai: '/api/v1/ai',
-      placementTest: '/api/v1/placement-test', // ✅ YENİ
+      placementTest: '/api/v1/placement-test',
     },
   });
 });
@@ -71,6 +73,8 @@ app.use('/api/v1/placement-test', placementTestRoutes);
 app.use('/api/v1/reading', readingRoutes);
 app.use('/api/v1/writing', writingRoutes);
 app.use('/api/v1/speaking', speakingRoutes);
+app.use('/api/v1/admin/auth', adminAuthRoutes);
+app.use('/api/v1/admin/dashboard', adminDashboardRoutes);
 
 // 404 Handler
 app.use((_req: Request, res: Response) => {

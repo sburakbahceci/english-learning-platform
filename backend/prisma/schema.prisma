@@ -513,3 +513,42 @@ model writing_exercise_attempts {
   @@index([user_id], map: "idx_writing_exercise_attempts_user")
   @@index([exercise_id], map: "idx_writing_exercise_attempts_exercise")
 }
+
+// ========================================
+// ADMIN MODELS
+// ========================================
+
+model admin_users {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String              @unique @db.VarChar(255)
+  password_hash String              @db.VarChar(255)
+  name          String              @db.VarChar(255)
+  role          String              @default("admin") @db.VarChar(50)
+  is_active     Boolean             @default(true)
+  last_login    DateTime?           @db.Timestamp(6)
+  created_at    DateTime            @default(now()) @db.Timestamp(6)
+  updated_at    DateTime            @default(now()) @updatedAt @db.Timestamp(6)
+  
+  audit_logs    admin_audit_logs[]
+
+  @@index([email])
+  @@index([is_active])
+}
+
+model admin_audit_logs {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  admin_id    String      @db.Uuid
+  action      String      @db.VarChar(100)
+  entity_type String      @db.VarChar(50)
+  entity_id   String?
+  changes     Json?
+  ip_address  String?     @db.VarChar(50)
+  user_agent  String?
+  created_at  DateTime    @default(now()) @db.Timestamp(6)
+  
+  admin       admin_users @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+}

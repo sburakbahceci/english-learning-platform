@@ -19,6 +19,9 @@ import WritingExercisesPage from './pages/WritingExercisesPage';
 import WritingPromptPage from './pages/WritingPromptPage';
 import WritingFeedbackPage from './pages/WritingFeedbackPage';
 import SpeakingTaskPage from './pages/SpeakingTaskPage';
+import AdminLoginPage from './admin/pages/AdminLoginPage';
+import AdminLayout from './admin/pages/AdminLayout';
+import AdminDashboardPage from './admin/pages/AdminDashboardPage';
 
 function App() {
   return (
@@ -69,6 +72,13 @@ function App() {
 
         {/* Speaking Routes */}
         <Route path="/speaking/:taskId" element={<SpeakingTaskPage />} />
+
+        {/* ✅ ADMIN ROUTES */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          {/* Future admin pages will go here */}
+        </Route>
       </Routes>
     </BrowserRouter>
   );
