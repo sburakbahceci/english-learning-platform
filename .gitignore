@@ -1,1 +1,33 @@
+# Root klasörde
+cat > .gitignore << 'EOF'
+# Dependencies (tüm klasörlerde)
+**/node_modules/
+node_modules/
+
+# Build
+**/dist/
+**/build/
+
+# Environment
 backend/.env
+frontend/.env
+**/.env
+**/.env.local
+**/.env.production
+
+# Logs
+**/*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Package locks (optional)
+**/package-lock.json
+EOF
