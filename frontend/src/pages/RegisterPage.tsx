@@ -65,7 +65,10 @@ export default function RegisterPage() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3001/api/v1/auth/google';
+    // ✅ Dinamik API URL
+    const apiUrl =
+      import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (
