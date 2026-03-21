@@ -105,57 +105,56 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          {/* Logo */}
-          <div className="flex items-center gap-6">
-            <img
-              src="/lingoria_text_logo.png"
-              alt="Lingoria"
-              className="h-10 w-auto"
-            />
-            {/* AI Chat Link */}
-            <button
-              onClick={() => navigate('/ai-chat')}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
-            >
-              <span>🤖</span>
-              <span className="font-medium">AI Assistant</span>
-            </button>
-          </div>
-
-          {/* User Info */}
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>XP: {user.totalXp}</span>
-                {userStartingLevel && (
-                  <>
-                    <span>•</span>
-                    <span className="font-semibold text-blue-600">
-                      Level: {userStartingLevel}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-            {user.avatarUrl && (
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Logo */}
+            <div className="flex-shrink-0">
               <img
-                src={user.avatarUrl}
-                alt={user.name}
-                className="w-10 h-10 rounded-full"
+                src="/lingoria_text_logo.png"
+                alt="Lingoria"
+                className="h-6 md:h-8"
               />
-            )}
-            <button
-              onClick={handleLogout}
-              className="px-4 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-lg font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
-            >
-              Logout
-            </button>
+            </div>
+            <div className="flex items-center gap-2 md:gap-4">
+              <button
+                onClick={() => navigate('/ai-chat')}
+                className="flex items-center gap-1.5 px-2 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all text-xs md:text-sm font-medium"
+              >
+                <span className="text-base md:text-lg">🤖</span>
+                <span className="hidden sm:inline">AI Assistant</span>
+                <span className="sm:hidden">AI</span>
+              </button>
+              <div className="flex items-center gap-1 bg-yellow-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg">
+                <span className="text-base md:text-lg">⭐</span>
+                <span className="text-xs md:text-sm font-bold text-yellow-600">
+                  {user?.totalXp || 0}
+                  <span className="hidden md:inline"> XP</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-1 bg-blue-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg">
+                <span className="text-xs md:text-sm font-bold text-blue-600">
+                  {userStartingLevel || 'A1'}
+                </span>
+              </div>
+              {user.avatarUrl && (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-gray-200"
+                />
+              )}
+              <button
+                onClick={handleLogout}
+                className="hidden md:flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <span>🚪</span>
+                <span className="font-medium">Logout</span>
+              </button>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">

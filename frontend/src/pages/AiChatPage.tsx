@@ -359,7 +359,9 @@ export default function AiChatPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium mb-1">
-                          {message.role === 'user' ? 'You' : 'Lingoria AI Assistant'}
+                          {message.role === 'user'
+                            ? 'You'
+                            : 'Lingoria AI Assistant'}
                         </p>
                         <div className="prose prose-sm max-w-none whitespace-pre-wrap">
                           {message.content}
