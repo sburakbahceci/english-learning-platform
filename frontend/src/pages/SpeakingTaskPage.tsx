@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -116,9 +115,6 @@ export default function SpeakingTaskPage() {
       mediaRecorder.onstop = () => {
         // ✅ Audio blob oluşturuldu ama şimdilik kullanılmıyor
         // İleride cloud storage'a upload için kullanılabilir
-        const _audioBlob = new Blob(audioChunksRef.current, {
-          type: 'audio/webm',
-        });
         // TODO: Upload to cloud storage if needed
       };
 
