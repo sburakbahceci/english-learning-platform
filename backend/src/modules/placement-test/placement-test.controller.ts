@@ -119,7 +119,10 @@ export class PlacementTestController {
         });
       }
 
-      const result = await placementTestService.completePlacementTest(userId);
+      const result = await placementTestService.completePlacementTest(
+        userId,
+        req.body.answers
+      );
 
       res.json({
         success: true,

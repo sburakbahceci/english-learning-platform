@@ -1,6 +1,7 @@
 import prisma from '../../config/database';
 
 export class PlacementTestService {
+  prisma: any;
   // Kullanıcı placement test yaptı mı?
   async hasUserCompletedTest(userId: string) {
     const user = await prisma.user.findUnique({
@@ -159,7 +160,7 @@ export class PlacementTestService {
 
     for (const answer of answers) {
       const question = placementTest.placement_test_questions.find(
-        (q) => q.question_id === answer.questionId
+        (q: { question_id: any }) => q.question_id === answer.questionId
       );
 
       if (question && question.questions.correct_answer === answer.answer) {
