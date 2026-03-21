@@ -11,7 +11,7 @@ export class AuthService {
   private oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    process.env.GOOGLE_CALLBACK_URL
   );
 
   // ========== GOOGLE AUTH (MEVCUT) ==========
@@ -119,7 +119,9 @@ export class AuthService {
       const passwordHash = await bcrypt.hash(password, 10);
 
       // Verification code oluştur (6 haneli)
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationCode = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
       const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 dakika
 
       // User oluştur
@@ -238,7 +240,9 @@ export class AuthService {
         throw new Error('EMAIL_ALREADY_VERIFIED');
       }
 
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationCode = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
       const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
 
       await prisma.user.update({
@@ -249,7 +253,11 @@ export class AuthService {
         },
       });
 
-      await emailService.sendVerificationCode(email, verificationCode, user.name);
+      await emailService.sendVerificationCode(
+        email,
+        verificationCode,
+        user.name
+      );
 
       return { message: 'Verification code sent' };
     } catch (error) {
