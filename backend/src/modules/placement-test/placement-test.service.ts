@@ -133,58 +133,74 @@ export class PlacementTestService {
   }
 
   // Test'i tamamla ve seviye belirle
-  async completePlacementTest(userId: string) {
-    const placementTest = await prisma.placementTest.findUnique({
-      where: { userId },
+  async completePlacementTest(userId: string, answers: any[]) {
+    // Placement test'i bul
+    const placementTest = await this.prisma.placement_tests.findFirst({
+      where: {
+        user_id: userId,
+        status: 'in_progress',
+      },
       include: {
-        answers: {
+        placement_test_questions: {
           include: {
-            question: true,
+            questions: true,
           },
         },
       },
     });
 
     if (!placementTest) {
-      throw new Error('PLACEMENT_TEST_NOT_FOUND');
+      throw new Error('No active placement test found');
     }
 
-    if (placementTest.completedAt) {
-      throw new Error('PLACEMENT_TEST_ALREADY_COMPLETED');
+    // Cevapları kontrol et
+    let correctCount = 0;
+    const totalQuestions = placementTest.placement_test_questions.length;
+
+    for (const answer of answers) {
+      const question = placementTest.placement_test_questions.find(
+        (q) => q.question_id === answer.questionId
+      );
+
+      if (question && question.questions.correct_answer === answer.answer) {
+        correctCount++;
+      }
     }
 
-    // Seviye belirleme algoritması
-    const level = this.determineLevelFromAnswers(placementTest.answers);
+    // ✅ Null-safe hesaplama
+    const correctAnswers = correctCount;
+    const totalQuestionsCount = totalQuestions;
+    const percentage =
+      totalQuestionsCount > 0
+        ? Math.round((correctAnswers / totalQuestionsCount) * 100)
+        : 0;
 
-    // Test'i tamamla
-    await prisma.placementTest.update({
+    // Level belirle
+    let level = 'A1';
+    if (percentage >= 90) level = 'C2';
+    else if (percentage >= 75) level = 'C1';
+    else if (percentage >= 60) level = 'B2';
+    else if (percentage >= 45) level = 'B1';
+    else if (percentage >= 30) level = 'A2';
+
+    // Placement test'i güncelle
+    await this.prisma.placement_tests.update({
       where: { id: placementTest.id },
       data: {
-        completedAt: new Date(),
+        status: 'completed',
+        correctAnswers: correctAnswers,
+        totalQuestions: totalQuestionsCount,
         determinedLevel: level,
+        completedAt: new Date(),
       },
     });
 
-    // User'ı güncelle
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        placementTestCompleted: true,
-        startingLevel: level,
-        placementTestDate: new Date(),
-      },
-    });
-
-    // Belirlenen seviyeye kadar unlock yap
-    await this.unlockLevelsUpTo(userId, level);
-
+    // ✅ Güvenli return
     return {
       determinedLevel: level,
-      correctAnswers: placementTest.correctAnswers,
-      totalQuestions: placementTest.totalQuestions,
-      percentage: Math.round(
-        (placementTest.correctAnswers / placementTest.totalQuestions) * 100
-      ),
+      correctAnswers: correctAnswers,
+      totalQuestions: totalQuestionsCount,
+      percentage: percentage,
     };
   }
 

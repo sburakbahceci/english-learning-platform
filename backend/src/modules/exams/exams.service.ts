@@ -106,20 +106,27 @@ export class ExamsService {
 
       // Calculate score
       let correctAnswers = 0;
-      const results = questions.map((q) => {
-        const userAnswer = answers[q.id] ?? '';
-        const isCorrect = userAnswer === q.correctAnswer;
-        if (isCorrect) correctAnswers++;
+      const results = questions.map(
+        (q: {
+          id: string | number;
+          correctAnswer: string;
+          questionText: any;
+          explanation: any;
+        }) => {
+          const userAnswer = answers[q.id] ?? '';
+          const isCorrect = userAnswer === q.correctAnswer;
+          if (isCorrect) correctAnswers++;
 
-        return {
-          questionId: q.id,
-          questionText: q.questionText,
-          userAnswer,
-          correctAnswer: q.correctAnswer ?? '',
-          isCorrect,
-          explanation: q.explanation,
-        };
-      });
+          return {
+            questionId: q.id,
+            questionText: q.questionText,
+            userAnswer,
+            correctAnswer: q.correctAnswer ?? '',
+            isCorrect,
+            explanation: q.explanation,
+          };
+        }
+      );
 
       const score = Math.round((correctAnswers / questions.length) * 100);
       const passed = score >= 80;
@@ -199,7 +206,7 @@ export class ExamsService {
     if (!currentLevel) return;
 
     const nextLevel = await prisma.level.findFirst({
-      where: { orderIndex: (currentLevel.orderIndex ?? 0) + 1 },
+      where: { order_index: (currentLevel.order_index ?? 0) + 1 },
     });
 
     if (nextLevel) {
