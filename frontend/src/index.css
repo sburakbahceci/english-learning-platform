@@ -179,3 +179,13 @@ button:focus-visible {
   font-weight: 500;
   color: #374151;
 }
+
+/* Horizontal scroll için scrollbar gizle */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -290,69 +290,70 @@ export default function LevelDetailPage() {
           </div>
         </div>
 
-        {/* Tab Selection */}
-        <div className="flex gap-2 mb-8 bg-gray-200/50 p-1 rounded-xl w-fit overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('lessons')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
-              activeTab === 'lessons'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            📚 Lessons
-          </button>
-          <button
-            onClick={() => setActiveTab('reading')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
-              activeTab === 'reading'
-                ? 'bg-white text-green-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            📖 Reading
-          </button>
-          <button
-            onClick={() => setActiveTab('writing')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
-              activeTab === 'writing'
-                ? 'bg-white text-purple-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            ✍️ Writing
-          </button>
-          {/* ✅ YENİ - Speaking Tab */}
-          <button
-            onClick={() => setActiveTab('speaking')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
-              activeTab === 'speaking'
-                ? 'bg-white text-red-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            🎤 Speaking
-          </button>
-          <button
-            onClick={() => setActiveTab('podcast')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
-              activeTab === 'podcast'
-                ? 'bg-white text-purple-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            🎙️ Podcast
-          </button>
-          <button
-            onClick={() => setActiveTab('reports')}
-            className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap ${
-              activeTab === 'reports'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            📊 Reports
-          </button>
+        {/* Tab Selection - Mobile Scrollable */}
+        <div className="mb-8 w-full overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 bg-gray-200/50 p-1 rounded-xl w-fit min-w-full">
+            <button
+              onClick={() => setActiveTab('lessons')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'lessons'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📚 Lessons
+            </button>
+            <button
+              onClick={() => setActiveTab('reading')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'reading'
+                  ? 'bg-white text-green-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📖 Reading
+            </button>
+            <button
+              onClick={() => setActiveTab('writing')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'writing'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              ✍️ Writing
+            </button>
+            <button
+              onClick={() => setActiveTab('speaking')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'speaking'
+                  ? 'bg-white text-red-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              🎤 Speaking
+            </button>
+            <button
+              onClick={() => setActiveTab('podcast')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'podcast'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              🎙️ Podcast
+            </button>
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`px-6 py-2.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'reports'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📊 Reports
+            </button>
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
