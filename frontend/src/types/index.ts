@@ -7,6 +7,7 @@ export interface Level {
   colorCode: string;
   isUnlockedByDefault?: boolean;
   unlockOrder?: number;
+  userProgress?: UserProgress;
 }
 
 export interface User {
@@ -24,16 +25,18 @@ export interface User {
   createdAt?: string;
 }
 
+// ✅ DÜZELTME: Backend schema ile uyumlu
 export interface UserProgress {
   id: string;
   userId: string;
   levelId: string;
-  status: 'locked' | 'in_progress' | 'completed';
   lessonsCompleted: number;
   totalLessons: number;
   isExamUnlocked: boolean;
-  examPassed: boolean;
-  bestExamScore: number;
+  examsPassed: number; // ✅ examPassed (boolean) → examsPassed (number)
+  examsFailed: number; // ✅ EKLENDI
+  createdAt?: string; // ✅ EKLENDI
+  updatedAt?: string; // ✅ EKLENDI
   level?: {
     code: string;
     name: string;
@@ -179,12 +182,6 @@ export interface LessonReport {
   accuracy: number;
   weakAreas: string[];
   attempts: ExerciseAttempt[];
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
 }
 
 // types/index.ts içinde bulun veya ekleyin

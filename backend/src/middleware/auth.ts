@@ -39,6 +39,9 @@ export const authenticate = async (
     req.userId = decoded.userId;
     req.userEmail = decoded.email;
 
+    console.log('🔑 Auth middleware - userId:', req.userId); // ✅ Debug
+    console.log('🔑 Token decoded:', decoded); // ✅ Debug
+
     next();
   } catch (error) {
     return res.status(401).json({

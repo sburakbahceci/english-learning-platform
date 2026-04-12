@@ -4,9 +4,14 @@ import { LevelsService } from './levels.service';
 const levelsService = new LevelsService();
 
 export class LevelsController {
-  async getAllLevels(_req: Request, res: Response) {
+  // GET /api/v1/levels
+  async getAllLevels(req: Request, res: Response) {
     try {
-      const levels = await levelsService.getAllLevels();
+      const userId = req.userId; // ✅ Auth middleware'den gelen userId
+
+      console.log('📍 Controller - userId from req:', userId); // ✅ Debug
+
+      const levels = await levelsService.getAllLevels(userId);
 
       res.json({
         success: true,
@@ -14,25 +19,18 @@ export class LevelsController {
         count: levels.length,
       });
     } catch (error) {
+      console.error('Get levels error:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch levels',
-        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
 
+  // GET /api/v1/levels/:code
   async getLevelByCode(req: Request, res: Response) {
     try {
       const { code } = req.params;
-
-      if (!code) {
-        return res.status(400).json({
-          success: false,
-          error: 'Level code is required',
-        });
-      }
-
       const level = await levelsService.getLevelByCode(code);
 
       res.json({
@@ -40,14 +38,9 @@ export class LevelsController {
         data: level,
       });
     } catch (error) {
-      const statusCode =
-        error instanceof Error && error.message === 'Level not found'
-          ? 404
-          : 500;
-
-      res.status(statusCode).json({
+      res.status(404).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch level',
+        error: 'Level not found',
       });
     }
   }

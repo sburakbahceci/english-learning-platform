@@ -27,7 +27,6 @@ export default function ExamPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [tabWarnings, setTabWarnings] = useState(0);
 
-  // ✅ 1. ÖNCE handleSubmit tanımla
   const handleSubmit = useCallback(
     async (autoSubmit = false) => {
       try {
@@ -45,7 +44,6 @@ export default function ExamPage() {
     [examId, answers]
   );
 
-  // ✅ 2. SONRA handleNextQuestion tanımla (handleSubmit'i kullanıyor)
   const handleNextQuestion = useCallback(() => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
@@ -56,7 +54,6 @@ export default function ExamPage() {
     }
   }, [currentIndex, questions.length, handleSubmit]);
 
-  // ✅ 3. SONRA handleTimeUp tanımla (handleNextQuestion'ı kullanıyor)
   const handleTimeUp = useCallback(() => {
     const currentQuestion = questions[currentIndex];
     if (currentQuestion && !answers[currentQuestion.id]) {
@@ -65,7 +62,6 @@ export default function ExamPage() {
     handleNextQuestion();
   }, [currentIndex, questions, answers, handleNextQuestion]);
 
-  // Load exam
   useEffect(() => {
     const loadExam = async () => {
       try {
@@ -86,7 +82,6 @@ export default function ExamPage() {
     loadExam();
   }, [levelId]);
 
-  // Timer
   useEffect(() => {
     if (phase !== 'exam') return;
 
@@ -103,7 +98,6 @@ export default function ExamPage() {
     return () => clearInterval(timer);
   }, [phase, currentIndex, handleTimeUp]);
 
-  // Anti-cheat: Tab visibility
   useEffect(() => {
     if (phase !== 'exam') return;
 
@@ -137,7 +131,6 @@ export default function ExamPage() {
     return 'text-red-600';
   };
 
-  // LOADING
   if (phase === 'loading') {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -149,7 +142,6 @@ export default function ExamPage() {
     );
   }
 
-  // ERROR
   if (phase === 'error') {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -176,7 +168,6 @@ export default function ExamPage() {
     );
   }
 
-  // READY
   if (phase === 'ready') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -250,7 +241,6 @@ export default function ExamPage() {
     );
   }
 
-  // SUBMITTING
   if (phase === 'submitting') {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -262,7 +252,6 @@ export default function ExamPage() {
     );
   }
 
-  // RESULT
   if (phase === 'result' && result) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
@@ -345,7 +334,10 @@ export default function ExamPage() {
           <div className="space-y-3">
             {result.passed ? (
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/dashboard', { 
+                  replace: true, 
+                  state: { refreshLevels: true }  // ✅ EKLENDI
+                })}
                 className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700"
               >
                 Continue to Next Level 🚀
@@ -359,7 +351,10 @@ export default function ExamPage() {
               </button>
             )}
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/dashboard', { 
+                replace: true,
+                state: { refreshLevels: true }  // ✅ EKLENDI
+              })}
               className="w-full py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50"
             >
               Back to Dashboard
@@ -370,7 +365,6 @@ export default function ExamPage() {
     );
   }
 
-  // EXAM
   const currentQuestion = questions[currentIndex];
   const options = Array.isArray(currentQuestion?.options)
     ? currentQuestion.options

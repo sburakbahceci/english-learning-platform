@@ -88,8 +88,8 @@ model UserProgress {
   examsFailed      Int      @default(0) @map("exams_failed")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
-  level            Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id])
+  level            Level    @relation(fields: [levelId], references: [id])
 
   @@unique([userId, levelId])
   @@map("user_progress")

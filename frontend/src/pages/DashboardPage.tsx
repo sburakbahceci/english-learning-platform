@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // ✅ useLocation eklendi
 import { useAuthStore } from '../store/authStore';
 import { levelsService } from '../services/levels.service';
 import { placementTestService } from '../services/placement-test.service';
@@ -13,18 +13,34 @@ interface LevelWithProgress extends Level {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ EKLENDI
   const { user, logout } = useAuthStore();
   const [levels, setLevels] = useState<LevelWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [userStartingLevel, setUserStartingLevel] = useState<string>('');
 
+  // ✅ DÜZELTME: location dependency eklendi
   useEffect(() => {
     checkPlacementTestAndFetchLevels();
-  }, []);
+
+    // ✅ Exam'den dönüldüğünde refresh
+    if (location.state?.refreshLevels) {
+      console.log('🔄 Refreshing levels after exam...');
+
+      // Küçük delay ile tekrar yükle (backend'in güncellemeyi tamamlaması için)
+      setTimeout(() => {
+        checkPlacementTestAndFetchLevels();
+      }, 500);
+
+      // State'i temizle (infinite loop önlemek için)
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]); // ✅ dependency array
 
   const checkPlacementTestAndFetchLevels = async () => {
     try {
-      // Placement test yapılmış mı kontrol et
+      setLoading(true);
+
       const { data: statusData } = await placementTestService.getStatus();
 
       if (!statusData.completed) {
@@ -32,31 +48,29 @@ export default function DashboardPage() {
         return;
       }
 
-      // User bilgisini al
       const token = localStorage.getItem('auth_token');
       if (!token) {
         navigate('/login');
         return;
       }
 
-      // ✅ authService kullan (zaten var)
       const userData = await authService.getCurrentUser(token);
       const startingLevel = userData.data?.startingLevel || 'A1';
 
       setUserStartingLevel(startingLevel);
 
-      // Seviyeleri getir
       const { data: levelsData } = await levelsService.getAllLevels();
+
+      console.log('📊 Levels fetched:', levelsData.length);
+
       const sortedLevels = levelsData.sort((a, b) => a.order - b.order);
 
-      // Starting level'ın index'ini bul
       const startingLevelIndex = sortedLevels.findIndex(
         (l) => l.code === startingLevel
       );
 
       if (startingLevelIndex === -1) {
         console.error('❌ Starting level not found:', startingLevel);
-        // Fallback: A1'i unlock et
         const levelsWithLock = sortedLevels.map((level) => ({
           ...level,
           isLocked: level.code !== 'A1',
@@ -65,14 +79,36 @@ export default function DashboardPage() {
         return;
       }
 
-      // Lock/Unlock belirle
-      const levelsWithLock = sortedLevels.map((level, index) => {
-        const isLocked = index > startingLevelIndex;
-        return {
-          ...level,
-          isLocked,
-        };
+      // ✅ YENİ UNLOCK MANTIĞI
+      const levelsWithLock = sortedLevels.map((level) => {
+        // 1. Starting level her zaman unlocked
+        if (level.code === startingLevel) {
+          console.log(`✅ ${level.code} unlocked (starting level)`);
+          return { ...level, isLocked: false };
+        }
+
+        // 2. UserProgress varsa (bir önceki level sınavı geçilmiş) unlocked
+        if (level.userProgress) {
+          console.log(`✅ ${level.code} unlocked (has progress):`, {
+            examsPassed: level.userProgress.examsPassed,
+            lessonsCompleted: level.userProgress.lessonsCompleted,
+          });
+          return { ...level, isLocked: false };
+        }
+
+        // 3. Progress'i olmayan level → locked
+        console.log(`🔒 ${level.code} locked (no progress)`);
+        return { ...level, isLocked: true };
       });
+
+      console.log(
+        '🔓 Levels with lock status:',
+        levelsWithLock.map((l) => ({
+          code: l.code,
+          locked: l.isLocked,
+          hasProgress: !!l.userProgress,
+        }))
+      );
 
       setLevels(levelsWithLock);
     } catch (error) {

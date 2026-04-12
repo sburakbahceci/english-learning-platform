@@ -2,7 +2,7 @@ import api from './api';
 import type { Level } from '../types';
 
 export const levelsService = {
-  // Get all levels
+  // Get all levels (✅ Cache bypass eklendi)
   async getAllLevels(): Promise<{
     success: boolean;
     data: Level[];
@@ -12,7 +12,9 @@ export const levelsService = {
       success: boolean;
       data: Level[];
       count: number;
-    }>('/levels');
+    }>('/levels', {
+      params: { _t: Date.now() }, // ✅ Cache bypass
+    });
     return response.data;
   },
 
